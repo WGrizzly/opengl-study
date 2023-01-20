@@ -1,0 +1,49 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			// "label": "C/C++: g++-7 build active file",
+			"label": "test build",
+			"command": "/usr/bin/g++-7",
+			"args": [
+				"-fdiagnostics-color=always",
+                "-ggdb",
+				"-g",
+                // "-O3",                
+				"${file}",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}",
+                "-I/home/${env:USERNAME}/lib/glfw/include",
+                "-L/home/${env:USERNAME}/lib/glfw/lib",
+				// /home/dyjeon/lib/glfw/lib/libglfw3.a
+
+				"/home/${env:USERNAME}/lib/glad/src/glad.c",
+				"-I/home/${env:USERNAME}/lib/glad/include",
+
+				"-lglfw3",
+				"-lGL",
+				"-lX11",
+				"-lpthread",
+				"-lXrandr",
+				"-lXi",
+				"-ldl"
+			],
+			"options": {
+				"cwd": "${fileDirname}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/g++-7"
+		},
+
+		{
+            "label": "Execute",
+            "command": "${fileDirname}/${fileBasenameNoExtension}",
+            //"command": "cd ${fileDirname} && ./${fileBasenameNoExtension}",
+            "group": "test"
+        }
+	]
+}
