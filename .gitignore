@@ -39,3 +39,5 @@
 *.exe
 *.out
 *.app
+
+learn-opengl/.vscode/
