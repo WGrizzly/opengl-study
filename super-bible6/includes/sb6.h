@@ -66,7 +66,7 @@
 
 #define GLFW_NO_GLU 1
 #define GLFW_INCLUDE_GLCOREARB 1
-#include "GL/glfw.h"
+#include "GLFW/glfw3.h"
 
 #include "sb6ext.h"
 
@@ -338,7 +338,7 @@ int CALLBACK WinMain(HINSTANCE hInstance,           \
     delete app;                                     \
     return 0;                                       \
 }
-#elif defined _LINUX || defined __APPLE__
+#elif defined __linux__ || defined __APPLE__
 #define DECLARE_MAIN(a)                             \
 int main(int argc, const char ** argv)              \
 {                                                   \
