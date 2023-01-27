@@ -17,6 +17,8 @@ void process_input(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
+float alpha_keyboard = 0.f;
+
 int main()
 {
     glfwInit();
@@ -41,9 +43,8 @@ int main()
     }
 
     Shader shader(
-        //need fix path
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/4.2.texture.vs",
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/4.2.texture.fs"
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.4.texture.vs",
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.4.texture.fs"
     );
 
     float vertices[] = {
@@ -82,10 +83,10 @@ int main()
     //all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     glBindTexture(GL_TEXTURE_2D, texture1);
     //set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);   //GL_REPEAT is default method
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   //GL_REPEAT is default method
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int cols, rows, chan;
     const char* tex_path1 = "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/container.jpg";
@@ -138,6 +139,10 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
+        float tv = glfwGetTime();
+        float alpha = static_cast<float>(sin(tv) / 2.0f + 0.5f);
+        shader.setFloat("alpha", alpha_keyboard);
+
         shader.use();
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -162,4 +167,15 @@ void process_input(GLFWwindow* window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    else if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        if(1.0f >alpha_keyboard)
+            alpha_keyboard += 0.1f;
+    }
+    else if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        if(alpha_keyboard > 0.f)
+            alpha_keyboard -= 0.1f;
+    }
+    std::cout << "alpha = " << alpha_keyboard << std::endl; 
 }

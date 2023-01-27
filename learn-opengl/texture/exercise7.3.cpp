@@ -41,9 +41,8 @@ int main()
     }
 
     Shader shader(
-        //need fix path
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/4.2.texture.vs",
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/4.2.texture.fs"
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.3.texture.vs",
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.3.texture.fs"
     );
 
     float vertices[] = {
@@ -82,10 +81,10 @@ int main()
     //all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     glBindTexture(GL_TEXTURE_2D, texture1);
     //set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);   //GL_REPEAT is default method
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);   //GL_REPEAT is default method
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int cols, rows, chan;
     const char* tex_path1 = "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/container.jpg";
