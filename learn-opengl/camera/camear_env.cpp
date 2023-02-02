@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 #include "../includes/self_defines.hpp"
 
@@ -46,8 +47,8 @@ int main()
         return -1;
     }
 
-    std::string vs_path(BASE_PATH);     vs_path += "crds_system/shader/6.1.crds_sys.vs";
-    std::string fs_path(BASE_PATH);     fs_path += "crds_system/shader/6.1.crds_sys.fs";
+    std::string vs_path(BASE_PATH);     vs_path += "camera/shader/7.1.camera.vs";
+    std::string fs_path(BASE_PATH);     fs_path += "camera/shader/7.1.camera.fs";
     Shader shader(vs_path.c_str(), fs_path.c_str());
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -92,6 +93,20 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
+
+    glm::vec3 cubePosition[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -163,8 +178,15 @@ int main()
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
     shader.use();
-    shader.setInt("tex1", 0);
-    shader.setInt("tex2", 1);
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 1);
+
+    glm::mat4 proj  = glm::perspective(
+            glm::radians(45.f),
+            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+            0.1f, 100.0f
+        );
+    shader.setMat4("projection", proj);
 
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(window))
@@ -181,28 +203,32 @@ int main()
 
         shader.use();
 
-        glm::mat4 model     = glm::mat4(1.0f);
-        glm::mat4 view      = glm::mat4(1.0f);
-        glm::mat4 proj      = glm::mat4(1.0f);
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        proj  = glm::perspective(
-            glm::radians(45.f),
-            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
-            0.1f, 100.0f
-        );
+        //camera view setting
+        float radius = 10.0;
+        float cam_x = static_cast<float>(sin(glfwGetTime()) * radius);
+        float cam_z = static_cast<float>(cos(glfwGetTime()) * radius);
 
-        unsigned int model_loc = glGetUniformLocation(shader.ID, "model");
-        unsigned int view_loc  = glGetUniformLocation(shader.ID, "view");
-
-        //3 different way to pass vars
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
-        shader.setMat4("projection", proj);
+        glm::vec3 cam_pos = glm::vec3(cam_x, 0, cam_z);
+        glm::vec3 cam_tar = glm::vec3(0.f, 0.f, 0.f);
+        glm::vec3 cam_up  = glm::vec3(0.f, 1.f, 0.f);
+        glm::mat4 view = glm::mat4(1.0f);
+        view = glm::lookAt(cam_pos, cam_tar, cam_up);
+        shader.setMat4("view", view);
 
         glBindVertexArray(VAO);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(GLuint i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePosition[i]);
+
+            float angle = 20.0f * i;
+            if (i % 3 == 0)
+                angle = glfwGetTime() * 25.0f;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            shader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();

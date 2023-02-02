@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <vector>
 
 #include "../includes/self_defines.hpp"
 
@@ -21,10 +22,18 @@ void process_input(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
-float alpha_keyboard = 0.f;
+glm::vec3 cam_pos   = glm::vec3(0.f, 0.f,  3.f);
+glm::vec3 cam_front = glm::vec3(0.f, 0.f, -1.f);
+glm::vec3 cam_up    = glm::vec3(0.f, 1.f,  0.f);
+
+float delta_time = 0.f;
+float last_frame = 0.f;
 
 int main()
 {
+    last_x = static_cast<float>(SCR_WIDTH) / 2.f;
+    last_y = static_cast<float>(SCR_HEIGHT) / 2.f;
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -46,8 +55,8 @@ int main()
         return -1;
     }
 
-    std::string vs_path(BASE_PATH);     vs_path += "crds_system/shader/6.1.crds_sys.vs";
-    std::string fs_path(BASE_PATH);     fs_path += "crds_system/shader/6.1.crds_sys.fs";
+    std::string vs_path(BASE_PATH);     vs_path += "camera/shader/7.1.camera.vs";
+    std::string fs_path(BASE_PATH);     fs_path += "camera/shader/7.1.camera.fs";
     Shader shader(vs_path.c_str(), fs_path.c_str());
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -92,6 +101,20 @@ int main()
         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
+
+    glm::vec3 cubePosition[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+
     unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -163,12 +186,23 @@ int main()
     // tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
     // -------------------------------------------------------------------------------------------
     shader.use();
-    shader.setInt("tex1", 0);
-    shader.setInt("tex2", 1);
+    shader.setInt("texture1", 0);
+    shader.setInt("texture2", 1);
+
+    glm::mat4 proj  = glm::perspective(
+            glm::radians(60.f),
+            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+            0.1f, 100.0f
+        );
+    shader.setMat4("projection", proj);
 
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(window))
     {
+        float current_frame = static_cast<float>(glfwGetTime());
+        delta_time = current_frame - last_frame;
+        last_frame = current_frame;
+
         process_input(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -181,28 +215,22 @@ int main()
 
         shader.use();
 
-        glm::mat4 model     = glm::mat4(1.0f);
-        glm::mat4 view      = glm::mat4(1.0f);
-        glm::mat4 proj      = glm::mat4(1.0f);
-        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-        view  = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        proj  = glm::perspective(
-            glm::radians(45.f),
-            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
-            0.1f, 100.0f
-        );
-
-        unsigned int model_loc = glGetUniformLocation(shader.ID, "model");
-        unsigned int view_loc  = glGetUniformLocation(shader.ID, "view");
-
-        //3 different way to pass vars
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
-        shader.setMat4("projection", proj);
+        glm::mat4 view = glm::lookAt(cam_pos, cam_pos + cam_front, cam_up);
+        shader.setMat4("view", view);
 
         glBindVertexArray(VAO);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(GLuint c = 0; c < 10; c++)
+        {
+            glm::mat4 model = glm::mat4(1.f);
+            model = glm::translate(model, cubePosition[c]);
+
+            float angle = 20.f * c;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            shader.setMat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+        
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -222,4 +250,14 @@ void process_input(GLFWwindow* window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    float cam_speed = static_cast<float>( 2.5f * delta_time );
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cam_pos += cam_speed * cam_front;
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cam_pos -= cam_speed * cam_front;
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cam_pos -= glm::normalize(glm::cross(cam_front, cam_up)) * cam_speed;
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cam_pos += glm::normalize(glm::cross(cam_front, cam_up)) * cam_speed;
 }
