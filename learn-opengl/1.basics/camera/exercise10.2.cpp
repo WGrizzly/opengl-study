@@ -1,5 +1,5 @@
-#include "../includes/shader_m.h"
-#include "../includes/camera.h"
+#include "../../includes/shader_m.h"
+#include "../../includes/camera.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <GLFW/glfw3.h>
@@ -12,7 +12,7 @@
 #include <math.h>
 #include <vector>
 
-#include "../includes/self_defines.hpp"
+#include "../../includes/self_defines.hpp"
 
 using namespace std;
 
@@ -63,8 +63,8 @@ int main()
         return -1;
     }
 
-    std::string vs_path(BASE_PATH);     vs_path += "camera/shader/7.1.camera.vs";
-    std::string fs_path(BASE_PATH);     fs_path += "camera/shader/7.1.camera.fs";
+    std::string vs_path(BASE_PATH);     vs_path += "1.basics/camera/shader/7.1.camera.vs";
+    std::string fs_path(BASE_PATH);     fs_path += "1.basics/camera/shader/7.1.camera.fs";
     Shader shader(vs_path.c_str(), fs_path.c_str());
     float vertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -217,12 +217,13 @@ int main()
         shader.use();
 
         //pass projection matrix to shader
-        glm::mat4 proj = glm::perspective(
-            glm::radians(cam.Zoom),
-            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
-            0.1f,
-            100.f
-        );
+        // glm::mat4 proj = glm::perspective(
+        //     glm::radians(cam.Zoom),
+        //     static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+        //     0.1f,
+        //     100.f
+        // );
+        glm::mat4 proj = glm::ortho(0.f, 800.f, 0.f, 600.f, 0.1f, 100.f);
         shader.setMat4("projection", proj);
 
         // glm::mat4 view = cam.GetViewMatrix();
