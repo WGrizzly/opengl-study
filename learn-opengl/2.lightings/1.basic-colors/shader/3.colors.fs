@@ -14,16 +14,18 @@ void main()
     float ambientStrength = 0.1;
     vec3 ambient = lightColor * ambientStrength;
 
-    // vec3 result = ambient * objectColor;
-    // FragColor = vec4(result, 1.0);
-    // // FragColor = vec4(lightColor * objectColor, 1.0);
-
-
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
 
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
-    vec3 result = (diffuse + ambient) * objectColor;
+
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 512);
+    vec3 specular = specularStrength * spec * lightColor;
+
+    vec3 result = (specular + diffuse + ambient) * objectColor;
     FragColor = vec4(result, 1.0);
 }
