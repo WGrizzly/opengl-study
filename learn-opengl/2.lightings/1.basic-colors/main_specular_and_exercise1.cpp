@@ -77,47 +77,47 @@ int main()
     Shader light_cube_shader(light_cube_vs_path.c_str(), light_cube_fs_path.c_str());
 
     float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      0.0f, 0.0f,   
+         0.5f, -0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,      0.0f,  0.0f, -1.0f,      0.0f, 0.0f,
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,      0.0f,  0.0f,  1.0f,      0.0f, 0.0f,
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,     -1.0f,  0.0f,  0.0f,      1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,     -1.0f,  0.0f,  0.0f,      1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,     -1.0f,  0.0f,  0.0f,      0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,     -1.0f,  0.0f,  0.0f,      0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,     -1.0f,  0.0f,  0.0f,      0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,     -1.0f,  0.0f,  0.0f,      1.0f, 0.0f,
 
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,      1.0f,  0.0f,  0.0f,      1.0f, 0.0f,   
+         0.5f,  0.5f, -0.5f,      1.0f,  0.0f,  0.0f,      1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,      1.0f,  0.0f,  0.0f,      0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,      1.0f,  0.0f,  0.0f,      0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,      1.0f,  0.0f,  0.0f,      0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,      1.0f,  0.0f,  0.0f,      1.0f, 0.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,      0.0f, -1.0f,  0.0f,      0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,      0.0f, -1.0f,  0.0f,      1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,      0.0f, -1.0f,  0.0f,      1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,      0.0f, -1.0f,  0.0f,      1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,      0.0f, -1.0f,  0.0f,      0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,      0.0f, -1.0f,  0.0f,      0.0f, 1.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+        -0.5f,  0.5f, -0.5f,      0.0f,  1.0f,  0.0f,      0.0f, 1.0f,   
+         0.5f,  0.5f, -0.5f,      0.0f,  1.0f,  0.0f,      1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,      0.0f,  1.0f,  0.0f,      1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,      0.0f,  1.0f,  0.0f,      1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,      0.0f,  1.0f,  0.0f,      0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,      0.0f,  1.0f,  0.0f,      0.0f, 1.0f
     };
 
     unsigned int VBO, cubeVAO;
@@ -128,17 +128,43 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glBindVertexArray(cubeVAO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(sizeof(float) * 3));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
 
     unsigned int lightCubeVAO;
     glGenVertexArrays(1, &lightCubeVAO);
     glBindVertexArray(lightCubeVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    unsigned int tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int cols, rows, chan;
+    stbi_set_flip_vertically_on_load(true);
+    std::string tex_path(BASE_PATH);    tex_path += "resources/sx_logo.png";
+    unsigned char * data = stbi_load(tex_path.c_str(), &cols, &rows, &chan, 0);
+    if(data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else        std::cout << "Failed to load texture" << std::endl;
+    stbi_image_free(data);
+
+    cube_shader.use();
+    cube_shader.setInt("texture1", 0);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -150,6 +176,9 @@ int main()
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex);
 
         light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
         light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;

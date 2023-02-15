@@ -1,4 +1,4 @@
-#include "../includes/shader_s.h"
+#include "../../includes/shader_s.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <GLFW/glfw3.h>
@@ -6,7 +6,7 @@
 #include <iostream>
 #include <math.h>
 
-#include "../includes/self_defines.hpp"
+#include "../../includes/self_defines.hpp"
 
 using namespace std;
 
@@ -43,8 +43,8 @@ int main()
     }
 
     Shader shader(
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.4.texture.vs",
-        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/texture/shader/4.4.texture.fs"
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/1.basics/texture/shader/4.4.texture.vs",
+        "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/1.basics/texture/shader/4.4.texture.fs"
     );
 
     float vertices[] = {
@@ -89,7 +89,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int cols, rows, chan;
-    const char* tex_path1 = "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/container.jpg";
+    const char* tex_path1 = "/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/textures/container.jpg";
     unsigned char* data = stbi_load(tex_path1, &cols, &rows, &chan, 0);
     if(data)
     {
@@ -110,7 +110,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     stbi_set_flip_vertically_on_load(true);
-    const char* tex_path2 = "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/resources/awesomeface.png";
+    const char* tex_path2 = "/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/textures/awesomeface.png";
     data = stbi_load(tex_path2, &cols, &rows, &chan, 0);
     if(data)
     {
