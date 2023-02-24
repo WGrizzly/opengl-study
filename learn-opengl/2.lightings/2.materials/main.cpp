@@ -149,7 +149,7 @@ int main()
     std::string df_map_path(RESOURCE_PATH);    df_map_path += "container2.png";
     unsigned int diffuse_map = loadTexture(df_map_path.c_str());
 
-    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular.png";
+    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular_colored.png";
     unsigned int spcl_map = loadTexture(spcl_map_path.c_str());
 
     cube_shader.use();
