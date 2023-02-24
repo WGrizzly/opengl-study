@@ -160,22 +160,15 @@ int main()
         // light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
         cube_shader.setVec3("light.position", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
-        // cube_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        glm::vec3 light_color;
-        light_color.x = sin(glfwGetTime() * 2.0f);
-        light_color.y = sin(glfwGetTime() * 0.7f);
-        light_color.z = sin(glfwGetTime() * 1.3f);
-        glm::vec3 diffuse_color = light_color * glm::vec3(0.5f);
-        glm::vec3 ambient_color = diffuse_color * glm::vec3(0.2f);
-        cube_shader.setVec3("light.ambient", diffuse_color);
-        cube_shader.setVec3("light.diffuse", ambient_color);
+        
+        cube_shader.setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
+        cube_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
         cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // material properties
-        // cube_shader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-        cube_shader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        cube_shader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        cube_shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
+        cube_shader.setVec3("material.ambient", 0.0f, 0.1f, 0.06f);
+        cube_shader.setVec3("material.diffuse", 0.0f, 0.50980392f, 0.50980392f);
+        cube_shader.setVec3("material.specular", 0.50196078f, 0.50196078f, 0.50196078f); // specular lighting doesn't have full effect on this object's material
         cube_shader.setFloat("material.shininess", 32.0f);
 
         glm::mat4 proj = glm::perspective(glm::radians(cam.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);

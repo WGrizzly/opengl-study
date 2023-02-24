@@ -149,8 +149,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //이게 뭐였더라: 렌더윈도우의 컬러 버퍼와 뎁스 버퍼를 비운다
         
         cube_shader.use();
-        // light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
-        // light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
+        light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
+        light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
         cube_shader.setVec3("light.position", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
 
