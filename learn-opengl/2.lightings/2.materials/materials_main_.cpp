@@ -156,13 +156,19 @@ int main()
 
 
         cube_shader.use();
-        light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
-        light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
-        cube_shader.setVec3("lightPos", light_pos);
+        // light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
+        // light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
+        cube_shader.setVec3("light.position", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
         // cube_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        cube_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        glm::vec3 light_color;
+        light_color.x = sin(glfwGetTime() * 2.0f);
+        light_color.y = sin(glfwGetTime() * 0.7f);
+        light_color.z = sin(glfwGetTime() * 1.3f);
+        glm::vec3 diffuse_color = light_color * glm::vec3(0.5f);
+        glm::vec3 ambient_color = diffuse_color * glm::vec3(0.2f);
+        cube_shader.setVec3("light.ambient", diffuse_color);
+        cube_shader.setVec3("light.diffuse", ambient_color);
         cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // material properties
