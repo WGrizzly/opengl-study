@@ -152,9 +152,13 @@ int main()
     std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular_colored.png";
     unsigned int spcl_map = loadTexture(spcl_map_path.c_str());
 
+    std::string ems_map_path(RESOURCE_PATH);    ems_map_path += "matrix.jpg";
+    unsigned int ems_map = loadTexture(ems_map_path.c_str());
+
     cube_shader.use();
     cube_shader.setInt("material.diffuse", 0);
     cube_shader.setInt("material.specular", 1);
+    cube_shader.setInt("material.emission", 2);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -197,6 +201,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, diffuse_map);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, spcl_map);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, ems_map);
 
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
