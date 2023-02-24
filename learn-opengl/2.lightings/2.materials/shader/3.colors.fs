@@ -30,20 +30,20 @@ uniform sampler2D texture1;
 void main()
 {
     //amb set
-    vec3 ambient = light.ambient * material.ambient;
+    vec3 ambient = lightColor * material.ambient;
 
     //diffuse set
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = (diff * material.diffuse) * light.diffuse;
+    vec3 diffuse = (diff * material.diffuse) * lightColor;
 
     //specular set
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = (material.specular * spec) * light.specular;
+    vec3 specular = (material.specular * spec) * lightColor;
 
-    vec3 result = (specular + diffuse + ambient) * objectColor;
+    vec3 result = (specular + diffuse + ambient);
     FragColor = vec4(result, 1.0);
 }

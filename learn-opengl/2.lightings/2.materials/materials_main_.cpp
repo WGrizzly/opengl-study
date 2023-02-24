@@ -160,12 +160,13 @@ int main()
         light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
         cube_shader.setVec3("lightPos", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
-        cube_shader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+        cube_shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
         cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
         cube_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
         cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // material properties
+        cube_shader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
         cube_shader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
         cube_shader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
         cube_shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
