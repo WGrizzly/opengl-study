@@ -146,11 +146,15 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    std::string map_path(RESOURCE_PATH);    map_path += "container2.png";    std::cout << "tex path = " << map_path << std::endl; 
-    unsigned int diffuse_map = loadTexture(map_path.c_str());
+    std::string df_map_path(RESOURCE_PATH);    df_map_path += "container2.png";
+    unsigned int diffuse_map = loadTexture(df_map_path.c_str());
+
+    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular.png";
+    unsigned int spcl_map = loadTexture(spcl_map_path.c_str());
 
     cube_shader.use();
     cube_shader.setInt("material.diffuse", 0);
+    cube_shader.setInt("material.specular", 1);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -165,8 +169,8 @@ int main()
 
 
         cube_shader.use();
-        // light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
-        // light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
+        light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
+        light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
         cube_shader.setVec3("light.position", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
         
@@ -188,6 +192,8 @@ int main()
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuse_map);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, spcl_map);
 
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
