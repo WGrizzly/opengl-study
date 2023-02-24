@@ -174,8 +174,11 @@ int main()
         cube_shader.setVec3("light.position", light_pos);
         cube_shader.setVec3("viewPos", cam.Position);
         
+        // cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        // cube_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        // cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
         cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        cube_shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        cube_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
         cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // material properties
