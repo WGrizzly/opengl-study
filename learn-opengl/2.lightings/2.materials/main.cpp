@@ -162,7 +162,7 @@ int main()
     std::string df_map_path(RESOURCE_PATH);    df_map_path += "container2.png";
     unsigned int diffuse_map = loadTexture(df_map_path.c_str());
 
-    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular_colored.png";
+    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular.png";
     unsigned int spcl_map = loadTexture(spcl_map_path.c_str());
 
     std::string ems_map_path(RESOURCE_PATH);    ems_map_path += "matrix.jpg";
@@ -188,17 +188,20 @@ int main()
         cube_shader.use();
         light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
         light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
-        // cube_shader.setVec3("light.position", light_pos);
-        cube_shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        cube_shader.setVec3("light.position", light_pos);
+        // cube_shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
         cube_shader.setVec3("viewPos", cam.Position);
         
         cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
         cube_shader.setVec3("light.diffuse", 1.0f, 1.0f, 1.0f);
         cube_shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.setFloat("light.constant", 1.0f);
+        cube_shader.setFloat("light.linear", 0.09f);
+        cube_shader.setFloat("light.quadratic", 0.032f);
 
         // material properties
         cube_shader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
-        cube_shader.setFloat("material.shininess", 64.0f);
+        cube_shader.setFloat("material.shininess", 128.0f);
 
         glm::mat4 proj = glm::perspective(glm::radians(cam.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = cam.GetViewMatrix();
@@ -227,7 +230,6 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
-        /*
         light_cube_shader.use();
         light_cube_shader.setMat4("projection", proj);
         light_cube_shader.setMat4("view", view);
@@ -238,7 +240,6 @@ int main()
 
         glBindVertexArray(lightCubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        */
         
         glfwSwapBuffers(window);
         glfwPollEvents();
