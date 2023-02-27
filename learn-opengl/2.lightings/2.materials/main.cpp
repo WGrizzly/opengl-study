@@ -188,8 +188,9 @@ int main()
         cube_shader.use();
         light_pos.x = (sin(glfwGetTime()) + 1.f) / 2.f;
         light_pos.y = sin(glfwGetTime() / 2.f) * 1.f;
-        cube_shader.setVec3("light.position", light_pos);
-        // cube_shader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        cube_shader.setVec3("light.position", cam.Position);
+        cube_shader.setVec3("light.direction", cam.Front);
+        cube_shader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
         cube_shader.setVec3("viewPos", cam.Position);
         
         cube_shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
