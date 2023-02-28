@@ -193,7 +193,7 @@ int main()
 
         cube_shader.use();
         cube_shader.setVec3("viewPos", cam.Position);
-        cube_shader.setFloat("material.shininess", 32.0f);
+        cube_shader.setFloat("material.shininess", 64.0f);
 
         // directional light
         cube_shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
@@ -286,8 +286,8 @@ int main()
             model = glm::translate(model, pointLightPositions[i]);
             model = glm::scale(model, glm::vec3(0.2f));
             light_cube_shader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        glDrawArrays(GL_TRIANGLES, 0, 36);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
