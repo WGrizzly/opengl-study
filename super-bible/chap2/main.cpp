@@ -1,4 +1,5 @@
 #include "sb7.h"
+#include "shader_m.h"
 #include <iostream>
 
 using namespace std;
@@ -59,7 +60,11 @@ class my_app : public sb7::application
 public:
     void startup()
     {
-        rendering_program = compile_shader();
+        std::string base_path = "/home/dyjeon/developes/learn-opengl/opengl-study/super-bible/chap2/";
+        std::string vs_path = base_path + "vertex_shader.vs";
+        std::string fs_path = base_path + "fragment_shader.fs";
+        // rendering_program = compile_shader();
+        shader_program.init(vs_path.c_str(), fs_path.c_str());
         glGenVertexArrays(1, &vertex_array_object);
         glBindVertexArray(vertex_array_object);
     }
@@ -73,20 +78,18 @@ public:
         };
         glClearBufferfv(GL_COLOR, 0, color);
 
-        glUseProgram(rendering_program);
-        // glPointSize(40.f);
-        // glDrawArrays(GL_POINTS, 0, 3);
+        shader_program.use();
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
     void shutdown()
     {
-        glDeleteVertexArrays(1, &vertex_array_object);
-        glDeleteProgram(rendering_program);
+        shader_program.delete_program();
         glDeleteVertexArrays(1, &vertex_array_object);
     }
 
 private:
-    GLuint rendering_program;
+    // GLuint rendering_program;
+    Shader shader_program;
     GLuint vertex_array_object;
 };
 DECLARE_MAIN(my_app);
