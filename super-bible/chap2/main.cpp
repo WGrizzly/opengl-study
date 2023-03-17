@@ -19,14 +19,9 @@ public:
     }
     void render(double curr_time)
     {
-        // GLfloat color[] = {
-        //     static_cast<float>(std::sin(curr_time))* 0.5f + 0.5f,
-        //     static_cast<float>(std::cos(curr_time))* 0.5f + 0.5f,
-        //     // 0.f, 0.f,
-        //     0.f, 1.f
-        // };
-        GLfloat color[] = { 0.f, 0.f, 0.f, 1.f };
-        glClearBufferfv(GL_COLOR, 0, color);
+        
+        GLfloat background_color[] = { 0.f, 0.f, 0.f, 1.f };
+        glClearBufferfv(GL_COLOR, 0, background_color);
 
         shader_program.use();
 
@@ -36,6 +31,13 @@ public:
             0.f, 0.f
         };
         glVertexAttrib4fv(0, attrib);
+        GLfloat color[] = {
+            static_cast<float>(std::sin(curr_time))* 0.5f + 0.5f,
+            static_cast<float>(std::cos(curr_time))* 0.5f + 0.5f,
+            // 0.f, 0.f,
+            0.f, 1.f
+        };
+        glVertexAttrib4fv(1, color);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
