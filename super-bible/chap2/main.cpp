@@ -16,6 +16,8 @@ public:
         shader_program.init(vs_path.c_str(), fs_path.c_str());
         glGenVertexArrays(1, &vertex_array_object);
         glBindVertexArray(vertex_array_object);
+
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
     void render(double curr_time)
     {
@@ -24,6 +26,8 @@ public:
         glClearBufferfv(GL_COLOR, 0, background_color);
 
         shader_program.use();
+        // GL_TESS_CONTROL_SHADER;
+        // GL_TESS_EVALUATION_SHADER;
 
         GLfloat attrib[] = {
             static_cast<float>(std::sin(curr_time) * 0.5f),
