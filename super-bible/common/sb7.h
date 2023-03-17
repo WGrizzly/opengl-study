@@ -195,20 +195,9 @@ public:
 #endif
     }
 
-    virtual void startup()
-    {
-
-    }
-
-    virtual void render(double currentTime)
-    {
-
-    }
-
-    virtual void shutdown()
-    {
-
-    }
+    virtual void startup()                      {}
+    virtual void render(double currentTime)     {}
+    virtual void shutdown()                     {}
 
     void setWindowTitle(const char * title)
     {
@@ -322,7 +311,8 @@ protected:
         info.flags.vsync = enable ? 1 : 0;
         glfwSwapInterval((int)info.flags.vsync);
     }
-};
+
+};//end of application class
 
 };
 
