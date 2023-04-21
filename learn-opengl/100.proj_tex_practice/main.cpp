@@ -71,8 +71,8 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);
 
-    std::string cube_vs_path(BASE_PATH);     cube_vs_path += "2.lightings/2.materials/shader/dfm_material_cube.vs";
-    std::string cube_fs_path(BASE_PATH);     cube_fs_path += "2.lightings/2.materials/shader/dfm_material_cube.fs";
+    std::string cube_vs_path(BASE_PATH);     cube_vs_path += "100.proj_tex_practice/shader/proj_tex_prac.vs";
+    std::string cube_fs_path(BASE_PATH);     cube_fs_path += "100.proj_tex_practice/shader/proj_tex_prac.fs";
     Shader cube_shader(cube_vs_path.c_str(), cube_fs_path.c_str());
 
     std::string light_cube_vs_path(BASE_PATH);     light_cube_vs_path += "2.lightings/2.materials/shader/dfm_light_cube.vs";
@@ -219,6 +219,7 @@ int main()
     cube_shader.setFloat("pointLights[3].constant", 1.0f);
     cube_shader.setFloat("pointLights[3].linear", 0.09f);
     cube_shader.setFloat("pointLights[3].quadratic", 0.032f);
+
     // spotLight
     cube_shader.setVec3("spotLight.ambient", 0.5f, 0.5f, 0.5f);
     cube_shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
@@ -250,13 +251,13 @@ int main()
 
         // view, projection transformations
         float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
-        glm::mat4 projection = glm::perspective(
+        glm::mat4 cam_proj = glm::perspective(
                                         glm::radians(cam.Zoom), 
                                         aspect_ratio,
                                         0.1f,
                                         100.f);
         glm::mat4 view = cam.GetViewMatrix();
-        cube_shader.setMat4("projection", projection);
+        cube_shader.setMat4("projection", cam_proj);
         cube_shader.setMat4("view", view);
         glm::mat4 model = glm::mat4(1.0f);
         cube_shader.setMat4("model", model);
@@ -281,7 +282,7 @@ int main()
         }
 
         light_cube_shader.use();
-        light_cube_shader.setMat4("projection", projection);
+        light_cube_shader.setMat4("projection", cam_proj);
         light_cube_shader.setMat4("view", view);
         glBindVertexArray(lightCubeVAO);
         for(unsigned int i = 0; i < 4; i++)
