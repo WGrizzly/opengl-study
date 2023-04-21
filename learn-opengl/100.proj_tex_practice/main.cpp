@@ -75,8 +75,8 @@ int main()
     std::string cube_fs_path(BASE_PATH);     cube_fs_path += "100.proj_tex_practice/shader/proj_tex_prac.fs";
     Shader cube_shader(cube_vs_path.c_str(), cube_fs_path.c_str());
 
-    std::string light_cube_vs_path(BASE_PATH);     light_cube_vs_path += "2.lightings/2.materials/shader/dfm_light_cube.vs";
-    std::string light_cube_fs_path(BASE_PATH);     light_cube_fs_path += "2.lightings/2.materials/shader/dfm_light_cube.fs";
+    std::string light_cube_vs_path(BASE_PATH);     light_cube_vs_path += "100.proj_tex_practice/shader/light_box.vs";
+    std::string light_cube_fs_path(BASE_PATH);     light_cube_fs_path += "100.proj_tex_practice/shader/light_box.fs";
     Shader light_cube_shader(light_cube_vs_path.c_str(), light_cube_fs_path.c_str());
 
     float vertices[] = {
@@ -257,7 +257,7 @@ int main()
                                         0.1f,
                                         100.f);
         glm::mat4 view = cam.GetViewMatrix();
-        cube_shader.setMat4("projection", cam_proj);
+        cube_shader.setMat4("cam_projection", cam_proj);
         cube_shader.setMat4("view", view);
         glm::mat4 model = glm::mat4(1.0f);
         cube_shader.setMat4("model", model);
@@ -282,7 +282,7 @@ int main()
         }
 
         light_cube_shader.use();
-        light_cube_shader.setMat4("projection", cam_proj);
+        light_cube_shader.setMat4("cam_projection", cam_proj);
         light_cube_shader.setMat4("view", view);
         glBindVertexArray(lightCubeVAO);
         for(unsigned int i = 0; i < 4; i++)
