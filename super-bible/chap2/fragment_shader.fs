@@ -1,16 +1,14 @@
 #version 430 core
-in VS_OUT
-{
-    vec4 color;
-} fs_in;
+in vec4 vs_color;
 out vec4 color;
 void main()
 {
-    color = vec4(
-        sin(gl_FragCoord.x * 0.25) * 0.5 + 0.5,
-        cos(gl_FragCoord.y * 0.25) * 0.5 + 0.5,
-        sin(gl_FragCoord.x * 0.15) * cos(gl_FragCoord.y * 0.15),
-        1.0
-    );
+    color = vs_color;
+    // color = vec4(
+    //     sin(gl_FragCoord.x * 0.25) * 0.5 + 0.5,
+    //     cos(gl_FragCoord.y * 0.25) * 0.5 + 0.5,
+    //     sin(gl_FragCoord.x * 0.15) * cos(gl_FragCoord.y * 0.15),
+    //     1.0
+    // );
 //    color = fs_in.color;
 }  
