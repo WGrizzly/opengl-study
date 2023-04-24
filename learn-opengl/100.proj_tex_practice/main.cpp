@@ -246,7 +246,9 @@ int main()
                                         1.f, //aspect_ratio,
                                         0.1f,
                                         100.f);
-    cube_shader.setMat4("pjt_projection", pjt_proj);
+    glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
+    bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+    cube_shader.setMat4("pjt_projection", bias_mat * pjt_proj);
     cube_shader.setVec3("pjt_pos", 0.0f, 0.0f, 5.0f);
 
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
