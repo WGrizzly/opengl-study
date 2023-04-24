@@ -75,7 +75,7 @@ void main()
     // // phase 2: point lights
     // for(int i = 0; i < NR_POINT_LIGHTS; i++)
     //     result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);    
-    // // phase 3: spot light
+    // phase 3: spot light
     result += CalcSpotLight(spotLight, norm, FragPos, viewDir);  
 
 
@@ -86,8 +86,9 @@ void main()
     // result += proj_tex_color;
 
     vec3 proj_tex_color = vec3(0.0);  
-    vec3 vec_norm_from_center = normalize(FragPos - pjt_pos);
-    if(dot(vec_norm_from_center, norm) > 0.f)
+    vec3 vec_norm_from_center = normalize(pjt_pos - FragPos);
+    // if( dot(vec_norm_from_center, norm) >= 0.1f )
+    if( dot(vec_norm_from_center, norm) >= 0.1f )
         proj_tex_color = textureProj(pjt_tex, ProjTexCoord).rgb;
     result += proj_tex_color;
 
