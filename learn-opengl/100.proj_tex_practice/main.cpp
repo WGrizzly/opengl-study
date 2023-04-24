@@ -252,6 +252,7 @@ int main()
     cube_shader.setVec3("pjt_pos", 0.0f, 0.0f, 5.0f);
 
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
+    stbi_set_flip_vertically_on_load(true);
     unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
     cube_shader.setInt("pjt_tex", 3);
 
