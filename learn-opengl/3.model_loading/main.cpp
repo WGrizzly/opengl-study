@@ -25,7 +25,9 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 
-Camera cam(glm::vec3(0.0f, 20.0f, 20.0f));
+// Camera cam(glm::vec3(0.0f, 20.0f, 20.0f));
+Camera cam(glm::vec3(0.0f, 0.0f, 3.0f));
+
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -69,7 +71,8 @@ int main()
         "/home/dyjeon/developes/learn-opengl/opengl-study/learn-opengl/3.model_loading/1.model_loading.fs"
     );
 
-    Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/nanosuit/nanosuit.obj");
+    // Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/nanosuit/nanosuit.obj");
+    Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/backpack/backpack.obj");
 
     //draw in wire-frame
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

@@ -230,6 +230,28 @@ int main()
     cube_shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
     cube_shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
+    // glm::vec3 pjt_pos = glm::vec3(0.f, 0.f, 5.0f);
+    // glm::vec3 pjt_lookAt = glm::vec3(0.f, 0.f, 0.f);
+    // glm::vec3 pjt_up = glm::vec3(0.f, 1.f, 0.f);
+    // glm::mat4 pjt_mat_view = glm::lookAt(pjt_pos, pjt_lookAt, pjt_up);
+    // glm::mat4 pjt_mat_proj = glm::perspective(glm::radians(45.f), 1.0f, 0.2f, 1000.0f);
+    // glm::mat4 pjt_mat_bias = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
+    // pjt_mat_bias = glm::scale(pjt_mat_bias, glm::vec3(0.5f));
+    Camera pjt(glm::vec3(0.0f, 0.0f, 5.0f));
+    cube_shader.setMat4("pjt_view", pjt.GetViewMatrix());
+    const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
+    glm::mat4 pjt_proj = glm::perspective(
+                                        glm::radians(30.f), 
+                                        1.f, //aspect_ratio,
+                                        0.1f,
+                                        100.f);
+    cube_shader.setMat4("pjt_projection", pjt_proj);
+    cube_shader.setVec3("pjt_pos", 0.0f, 0.0f, 5.0f);
+
+    std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
+    unsigned int pjt_map = load_texture(pjt_map_path.c_str());
+    cube_shader.setInt("pjt_tex", 3);
+
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
@@ -250,17 +272,15 @@ int main()
         
 
         // view, projection transformations
-        float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
         glm::mat4 cam_proj = glm::perspective(
                                         glm::radians(cam.Zoom), 
                                         aspect_ratio,
                                         0.1f,
                                         100.f);
-        glm::mat4 view = cam.GetViewMatrix();
         cube_shader.setMat4("cam_projection", cam_proj);
+        glm::mat4 view = cam.GetViewMatrix();
         cube_shader.setMat4("view", view);
-        glm::mat4 model = glm::mat4(1.0f);
-        cube_shader.setMat4("model", model);
+        
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuse_map);
@@ -268,6 +288,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, spcl_map);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, ems_map);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, pjt_map);
 
         glBindVertexArray(cubeVAO);
         for (unsigned int i = 0; i < 10; i++)
@@ -283,7 +305,10 @@ int main()
 
         light_cube_shader.use();
         light_cube_shader.setMat4("cam_projection", cam_proj);
+        glm::mat4 model = glm::mat4(1.0f);
+        cube_shader.setMat4("model", model);
         light_cube_shader.setMat4("view", view);
+        
         glBindVertexArray(lightCubeVAO);
         for(unsigned int i = 0; i < 4; i++)
         {
