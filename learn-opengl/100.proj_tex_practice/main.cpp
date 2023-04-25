@@ -242,7 +242,7 @@ int main()
     cube_shader.setMat4("pjt_view", pjt.GetViewMatrix());
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
     glm::mat4 pjt_proj = glm::perspective(
-                                        glm::radians(30.f), 
+                                        glm::radians(20.f), 
                                         1.f, //aspect_ratio,
                                         0.1f,
                                         100.f);
