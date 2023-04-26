@@ -36,6 +36,12 @@ bool firstMouse = true;
 float delta_time = 0.0f;
 float last_frame = 0.0f;
 
+struct vert_info
+{
+    glm::vec3 vertice;
+    glm::vec3 normal;
+};
+
 int main()
 {
     glfwInit();
@@ -63,7 +69,7 @@ int main()
         return -1;
     }
 
-    // stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -73,29 +79,60 @@ int main()
     );
 
     // Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/nanosuit/nanosuit.obj");
-    // Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/backpack/backpack.obj");
-    Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+    Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/backpack/backpack.obj");
+    // Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+
+    std::vector<vert_info> verts;
+    for(auto mesh : model_obj.meshes)
+    {
+        for(auto vert : mesh.vertices)
+        {
+            vert_info vi;
+            vi.vertice = vert.Position;
+            vi.normal = vert.Normal;
+            verts.push_back(vi);
+        }
+    }
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts) * verts.size(), &verts.front(), GL_STATIC_DRAW);
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0); 
+    }
 
 
     Camera pjt(glm::vec3(0.0f, 0.0f, 5.0f));
-    shader.setMat4("pjt_view", pjt.GetViewMatrix());
+    shader.setMat4("pjt_view", pjt.GetViewMatrix());    //vs
 
     const float aspect_ratio = 1.f;
     glm::mat4 pjt_proj = glm::perspective(
-        glm::radians(30.f),
+        glm::radians(5.f),
         aspect_ratio,
         0.1f,
         100.f
     );
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
-    shader.setMat4("pjt_proj", pjt_proj);
-    shader.setVec3("pjt_pos", glm::vec3(0.0f, 0.0f, 5.0f));
+    shader.setMat4("pjt_proj", bias_mat * pjt_proj);   //vs
+    shader.setVec3("pjt_pos", glm::vec3(0.0f, 0.0f, 5.0f)); //fs
 
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
     stbi_set_flip_vertically_on_load(true);
     unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
-    shader.setInt("pjt_tex", 0);
+    shader.setInt("pjt_tex", 3);
+
 
     // //draw in wire-frame
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -109,9 +146,6 @@ int main()
 
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pjt_map);
 
         shader.use();
 
@@ -128,7 +162,14 @@ int main()
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
         shader.setMat4("cam_model", model);
-        model_obj.Draw(shader);
+
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, verts.size());
+
+        // glActiveTexture(GL_TEXTURE3);
+        // glBindTexture(GL_TEXTURE_2D, pjt_map);
+        // model_obj.Draw(shader);
+        // model_obj.Draw_();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
