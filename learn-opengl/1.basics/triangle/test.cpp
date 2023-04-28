@@ -132,14 +132,15 @@ int main()
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
     float vertices1[] = {
-        -0.95f, -0.5f, 0.0f,  // left 
-        -0.05f, -0.5f, 0.0f,  // right
-        -0.45f, 0.5f, 0.0f,  // top         
+        -0.9f, -0.5f, 0.0f,
+         0.1f, -0.5f, 0.0f,
+         -0.4f,  0.5f, 0.0        
     }; 
     float vertices2[] = {
-         0.0f, -0.5f, 0.0f,  // left
-         0.9f, -0.5f, 0.0f,  // right
-         0.45f, 0.5f, 0.0f   // top 
+        0.2f, -0.5f, 0.0f,
+        0.9f, -0.5f, 0.0f,
+        0.9f,  0.5f, 0.0f,
+        0.2f,  0.5f, 0.0f
     };
 
     unsigned int VBOs[2], VAOs[2];//, EBO;
@@ -196,7 +197,8 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glUseProgram(shaderProgram2);
         glBindVertexArray(VAOs[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        // glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices2) / (sizeof(float) * 3));
+        glDrawArrays(GL_TRIANGLES, 0, 4);
         // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         // glBindVertexArray(0); // no need to unbind it every time 
  

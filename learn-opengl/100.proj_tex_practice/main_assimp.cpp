@@ -79,8 +79,8 @@ int main()
     );
 
     // Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/nanosuit/nanosuit.obj");
-    Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/backpack/backpack.obj");
-    // Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+    // Model model_obj("/home/dyjeon/developes/learn-opengl/LearnOpenGL-master/resources/objects/backpack/backpack.obj");
+    Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
 
     std::vector<vert_info> verts;
     for(auto mesh : model_obj.meshes)
@@ -94,19 +94,20 @@ int main()
         }
     }
 
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    unsigned int bowlVBO;
+    glGenBuffers(1, &bowlVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(verts) * verts.size(), &verts.front(), GL_STATIC_DRAW);
 
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    unsigned int bowlVAO;
+    glGenVertexArrays(1, &bowlVAO);
+    glBindVertexArray(bowlVAO);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(sizeof(float) * 3));
     glEnableVertexAttribArray(1);
 
+    if(false)
     {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0); 
@@ -123,6 +124,7 @@ int main()
         0.1f,
         100.f
     );
+
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
     shader.setMat4("pjt_proj", bias_mat * pjt_proj);   //vs
@@ -131,10 +133,10 @@ int main()
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
     stbi_set_flip_vertically_on_load(true);
     unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
-    shader.setInt("pjt_tex", 3);
+    shader.setInt("pjt_tex", 0);
 
 
-    // //draw in wire-frame
+    //draw in wire-frame
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     while(!glfwWindowShouldClose(window))
     {
@@ -148,6 +150,9 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, pjt_map);
 
         glm::mat4 cam_proj = glm::perspective(
             glm::radians(cam.Zoom), 
@@ -163,14 +168,10 @@ int main()
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
         shader.setMat4("cam_model", model);
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(bowlVAO);
         glDrawArrays(GL_TRIANGLES, 0, verts.size());
 
-        // glActiveTexture(GL_TEXTURE3);
-        // glBindTexture(GL_TEXTURE_2D, pjt_map);
-        // model_obj.Draw(shader);
-        // model_obj.Draw_();
-
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
