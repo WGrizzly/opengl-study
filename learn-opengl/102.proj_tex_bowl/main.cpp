@@ -88,83 +88,9 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);
 
-    std::string cube_vs_path(BASE_PATH);     cube_vs_path += "101.proj_tex_practice/shader/proj_tex_prac.vs";
-    std::string cube_fs_path(BASE_PATH);     cube_fs_path += "101.proj_tex_practice/shader/proj_tex_prac.fs";
-    Shader cube_shader(cube_vs_path.c_str(), cube_fs_path.c_str());
-
-    std::string bowl_shader_vs_path(BASE_PATH);     bowl_shader_vs_path += "101.proj_tex_practice/shader/bowl.vs";
-    std::string bowl_shader_fs_path(BASE_PATH);     bowl_shader_fs_path += "101.proj_tex_practice/shader/bowl.fs";
+    std::string bowl_shader_vs_path(BASE_PATH);     bowl_shader_vs_path += "102.proj_tex_bowl/shader/bowl.vs";
+    std::string bowl_shader_fs_path(BASE_PATH);     bowl_shader_fs_path += "102.proj_tex_bowl/shader/bowl.fs";
     Shader bowl_shader(bowl_shader_vs_path.c_str(), bowl_shader_fs_path.c_str());
-
-    float vertices[] = {
-        // positions          // normals           // texture coords
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-    };
-
-    std::vector<vert_info> vec_vertex;
-    for(int line = 0; line < 36; line++)
-    {
-        size_t idx = line * 8;
-        vert_info vi;
-        vi.pos  = glm::vec3(vertices[idx + 0], vertices[idx + 1], vertices[idx + 2]);
-        vi.norm = glm::vec3(vertices[idx + 3], vertices[idx + 4], vertices[idx + 5]);
-        vi.uv   = glm::vec2(vertices[idx + 6], vertices[idx + 7]);
-        vec_vertex.push_back(vi);
-    }
-
-    glm::vec3 cube_positions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f,  2.0f, -2.5f),
-        glm::vec3( 1.5f,  0.2f, -1.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
-
 
     std::vector<vert_info> vec_vertex_bowl;
     std::vector<unsigned int> vec_indice;
@@ -190,21 +116,6 @@ int main()
         }
     }
 
-    // unsigned int bowlVBO;
-    // glGenBuffers(1, &bowlVBO);
-    // glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex_bowl.size(), &vec_vertex_bowl.front(), GL_STATIC_DRAW);\
-    
-    // unsigned int bowlVAO;
-    // glGenVertexArrays(1, &bowlVAO);
-    // glBindVertexArray(bowlVAO);
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    // glEnableVertexAttribArray(0);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
-    // glEnableVertexAttribArray(1);
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 6));
-    // glEnableVertexAttribArray(2);
-    // glBindVertexArray(0);
 
     unsigned int bowlVAO, bowlVBO, bowlEBO;
     glGenVertexArrays(1, &bowlVAO);
@@ -226,94 +137,13 @@ int main()
     
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
     glBindVertexArray(0); 
-
-
-    // unsigned int cubeVBO;
-    // glGenBuffers(1, &cubeVBO);
-    // glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex.size(), &vec_vertex.front(), GL_STATIC_DRAW);
-
-    // unsigned int cubeVAO;
-    // glGenVertexArrays(1, &cubeVAO);
-    // glBindVertexArray(cubeVAO);
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    // glEnableVertexAttribArray(0);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
-    // glEnableVertexAttribArray(1);
-    // glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 6));
-    // glEnableVertexAttribArray(2);
-    // glBindVertexArray(0);
-
-    unsigned int cubeVAO;
-    glGenVertexArrays(1, &cubeVAO);
-    glBindVertexArray(cubeVAO);
-
-    unsigned int cubeVBO;
-    glGenBuffers(1, &cubeVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex.size(), &vec_vertex.front(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 6));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glBindVertexArray(0); 
-
     
 
 
     stbi_set_flip_vertically_on_load(true);
-
-    std::string df_map_path(RESOURCE_PATH);    df_map_path += "container2.png";
-    unsigned int diffuse_map = load_texture(df_map_path.c_str());
-
-    std::string spcl_map_path(RESOURCE_PATH);   spcl_map_path += "container2_specular.png";
-    unsigned int spcl_map = load_texture(spcl_map_path.c_str());
-
-    std::string ems_map_path(RESOURCE_PATH);    ems_map_path += "matrix.jpg";
-    unsigned int ems_map = load_texture(ems_map_path.c_str());
-
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
     unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
 
-    cube_shader.use();
-    cube_shader.setInt("material.diffuse", 0);
-    cube_shader.setInt("material.specular", 1);
-    cube_shader.setInt("material.emission", 2);
-    cube_shader.setInt("pjt_tex", 3);
-    cube_shader.setFloat("material.shininess", 64.0f);
-
-    // directional light
-    cube_shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-    cube_shader.setVec3("dirLight.ambient", 0.35f, 0.35f, 0.35f);
-    cube_shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-    cube_shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-
-    // spotLight
-    cube_shader.setVec3("spotLight.ambient", 0.5f, 0.5f, 0.5f);
-    cube_shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-    cube_shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    cube_shader.setFloat("spotLight.constant", 1.0f);
-    cube_shader.setFloat("spotLight.linear", 0.09f);
-    cube_shader.setFloat("spotLight.quadratic", 0.032f);
-    cube_shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    cube_shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
-
-    // glm::vec3 pjt_pos = glm::vec3(0.f, 0.f, 5.0f);
-    // glm::vec3 pjt_lookAt = glm::vec3(0.f, 0.f, 0.f);
-    // glm::vec3 pjt_up = glm::vec3(0.f, 1.f, 0.f);
-    // glm::mat4 pjt_mat_view = glm::lookAt(pjt_pos, pjt_lookAt, pjt_up);
-    // glm::mat4 pjt_mat_proj = glm::perspective(glm::radians(45.f), 1.0f, 0.2f, 1000.0f);
-    // glm::mat4 pjt_mat_bias = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
-    // pjt_mat_bias = glm::scale(pjt_mat_bias, glm::vec3(0.5f));
-
-    // Camera pjt(glm::vec3(0.0f, 0.0f, 5.0f));
-    cube_shader.setMat4("pjt_view", pjt.GetViewMatrix());
     
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
     const float pjt_fov = glm::radians(20.f);
@@ -324,13 +154,11 @@ int main()
                                         100.f);
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
-    cube_shader.setMat4("pjt_projection", bias_mat * pjt_proj);
-    cube_shader.setVec3("pjt_pos", 0.0f, 0.0f, 5.0f);
 
 
     bowl_shader.use();
     //fragment shader
-    bowl_shader.setInt("pjtTexture", 3);
+    bowl_shader.setInt("pjtTexture", 0);
     bowl_shader.setVec3("pjtPos", pjt.Position);
     bowl_shader.setVec3("pjtFront", pjt.Front);
     bowl_shader.setFloat("pjtFOV", pjt_fov);
@@ -350,33 +178,8 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        cube_shader.use();
-        cube_shader.setVec3("viewPos", cam.Position);
-        
-        // spotLight
-        cube_shader.setVec3("spotLight.position", cam.Position);
-        cube_shader.setVec3("spotLight.direction", cam.Front);
-        // if(light_toggle)
-        // {
-        //     cube_shader.setVec3("spotLight.ambient", 0.5f, 0.5f, 0.5f);
-        //     cube_shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-        //     cube_shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-        // }
-        // else
-        // {
-        //     cube_shader.setVec3("spotLight.ambient", 0.f, 0.f, 0.f);
-        //     cube_shader.setVec3("spotLight.diffuse", 0.f, 0.f, 0.f);
-        //     cube_shader.setVec3("spotLight.specular", 0.f, 0.f, 0.f);
-        // }
-        
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, diffuse_map);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, spcl_map);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, ems_map);
-        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, pjt_map);
 
         // view, projection transformations
@@ -387,25 +190,9 @@ int main()
                                         100.f);
         glm::mat4 cam_view = cam.GetViewMatrix();
 
-        glBindVertexArray(cubeVAO);
-        cube_shader.setMat4("camProj", cam_proj);
-        cube_shader.setMat4("camView", cam_view);
-        for (unsigned int i = 1; i < 10; i++)
-        {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cube_positions[i]);
-            float angle = 20.0f * i;
-            // model = glm::rotate(model, glm::radians(angle),
-            //                     glm::vec3(1.0f, 0.3f, 0.5f));
-            cube_shader.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, vec_vertex_bowl.size());
-            // glBindVertexArray(0);
-        }
-        // glBindVertexArray(0);
-
         
         bowl_shader.use();
-        bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
+        // bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
 
         glm::mat4 bowl_model = glm::mat4(1.0f);
         // bowl_model = glm::translate(bowl_model, glm::vec3(0.f, 0.f, 0.f));
@@ -415,9 +202,6 @@ int main()
         bowl_shader.setMat4("camProj", cam_proj);
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
-        // glDrawArrays(GL_TRIANGLES, 0, bowl_vertice_size);
-        // glBindVertexArray(0);
-
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -426,9 +210,6 @@ int main()
     glDeleteVertexArrays(1, &bowlVAO);
     glDeleteBuffers(1, &bowlVBO);
     glDeleteBuffers(1, &bowlEBO);
-
-    glDeleteVertexArrays(1, &cubeVAO);
-    glDeleteBuffers(1, &cubeVBO);
 
     glfwTerminate();
     return 0;
@@ -483,8 +264,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    // cam.ProcessMouseMovement(xoffset, yoffset);
-    pjt.ProcessMouseMovement(xoffset, yoffset);
+    cam.ProcessMouseMovement(xoffset, yoffset);
+    // pjt.ProcessMouseMovement(xoffset, yoffset);
 }
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
