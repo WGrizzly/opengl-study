@@ -166,6 +166,7 @@ int main()
 
 
     std::vector<vert_info> vec_vertex_bowl;
+    std::vector<unsigned int> vec_indice;
     size_t bowl_vertice_size = 0;
     {
         Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
@@ -182,6 +183,9 @@ int main()
                 vec_vertex_bowl.push_back(vi);
                 bowl_vertice_size += mesh.vertices.size();
             }
+
+            for(auto idx : mesh.indices)
+                vec_indice.push_back(idx);
         }
     }
 
@@ -201,15 +205,16 @@ int main()
     // glEnableVertexAttribArray(2);
     // glBindVertexArray(0);
 
-    unsigned int bowlVAO;
+    unsigned int bowlVAO, bowlVBO, bowlEBO;
     glGenVertexArrays(1, &bowlVAO);
-    glBindVertexArray(bowlVAO);
-
-    unsigned int bowlVBO;
     glGenBuffers(1, &bowlVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
+    glGenBuffers(1, &bowlEBO);
 
+    glBindVertexArray(bowlVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex_bowl.size(), &vec_vertex_bowl.front(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bowlEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_indice.size(), &vec_indice.front(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -308,9 +313,11 @@ int main()
 
     Camera pjt(glm::vec3(0.0f, 0.0f, 5.0f));
     cube_shader.setMat4("pjt_view", pjt.GetViewMatrix());
+    
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
+    const float pjt_fov = glm::radians(20.f);
     glm::mat4 pjt_proj = glm::perspective(
-                                        glm::radians(20.f), 
+                                        pjt_fov, 
                                         1.f, //aspect_ratio,
                                         0.1f,
                                         100.f);
@@ -318,6 +325,18 @@ int main()
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
     cube_shader.setMat4("pjt_projection", bias_mat * pjt_proj);
     cube_shader.setVec3("pjt_pos", 0.0f, 0.0f, 5.0f);
+
+
+    bowl_shader.use();
+    //fragment shader
+    bowl_shader.setInt("pjtTexture", 3);
+    bowl_shader.setVec3("pjtPos", pjt.Position);
+    bowl_shader.setVec3("pjtFront", pjt.Front);
+    bowl_shader.setFloat("pjtFOV", pjt_fov);
+    //vertex shader
+    bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
+    bowl_shader.setMat4("pjtProjection", bias_mat * pjt_proj);
+    
 
     while (!glfwWindowShouldClose(window))
     {
@@ -392,13 +411,18 @@ int main()
         bowl_shader.setMat4("camView", cam_view);
         bowl_shader.setMat4("camProj", cam_proj);
         glBindVertexArray(bowlVAO);
-        glDrawArrays(GL_TRIANGLES, 0, bowl_vertice_size);
+        glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_TRIANGLES, 0, bowl_vertice_size);
         // glBindVertexArray(0);
 
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteVertexArrays(1, &bowlVAO);
+    glDeleteBuffers(1, &bowlVBO);
+    glDeleteBuffers(1, &bowlEBO);
 
     glDeleteVertexArrays(1, &cubeVAO);
     glDeleteBuffers(1, &cubeVBO);
