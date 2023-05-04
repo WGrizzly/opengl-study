@@ -13,6 +13,10 @@ out vec4 FragColor;
 void main()
 {
     vec4 result = vec4(0.8);
-    result += vec4(textureProj(pjtTexture, pjtTexCoord).rgb, 1.0);
+    // result += vec4(textureProj(pjtTexture, pjtTexCoord).rgb, 1.0);
+    // result += textureProj(pjtTexture, pjtTexCoord);
+
+    vec2 uv = pjtTexCoord.xy / pjtTexCoord.z;
+    result += texture(pjtTexture, uv);
     FragColor = result;
 }
