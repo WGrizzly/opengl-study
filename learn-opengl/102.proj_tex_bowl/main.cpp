@@ -40,10 +40,6 @@ bool light_toggle = false;
 float delta_time = 0.0f;
 float last_frame = 0.0f;
 
-// lighting
-glm::vec3 light_pos(0.3f, 0.5f, 1.0f);
-// glm::vec3 light_pos(1.f, 0.f, 0.0f);
-
 struct vert_info
 {
     glm::vec3 pos;
@@ -166,7 +162,7 @@ int main()
     bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
     bowl_shader.setMat4("pjtProjection", bias_mat * pjt_proj);
     
-
+    pjt.ProcessMouseMovement(0, 100);
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
@@ -264,13 +260,16 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
+    // std::cout << "x: " << xoffset << ", y: " << yoffset << std::endl;
     cam.ProcessMouseMovement(xoffset, yoffset);
     // pjt.ProcessMouseMovement(xoffset, yoffset);
 }
+
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     cam.ProcessMouseScroll(static_cast<float>(yoffset));
 }
+
 unsigned int load_texture(char const * path)
 {
     unsigned int textureID;
