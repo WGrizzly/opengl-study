@@ -30,7 +30,8 @@ const unsigned int SCR_HEIGHT = 1200;
 
 // camera
 Camera cam(glm::vec3(0.0f, 0.0f, 5.0f));
-Camera pjt(glm::vec3(0.0f, 0.0f, 5.0f));
+Camera pjt1(glm::vec3(0.0f, 0.0f, 5.0f));
+Camera pjt2(glm::vec3(0.0f, 0.0f, 5.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool first_mouse = true;
@@ -151,18 +152,26 @@ int main()
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
 
+    // projector setting for test
+    {
+        pjt1.ProcessMouseMovement(0, 100);
+        pjt2.ProcessMouseMovement(100, 0);
+    }
 
     bowl_shader.use();
     //fragment shader
-    bowl_shader.setInt("pjtTexture", 0);
-    bowl_shader.setFloat("pjtFOV", pjt_fov);
-    bowl_shader.setVec3("pjtPos1", pjt.Position);
-    bowl_shader.setVec3("pjtFront1", pjt.Front);
+    bowl_shader.setInt  ("pjtTexture"    , 0);
+    bowl_shader.setFloat("pjtFOV"        , pjt_fov);
+    bowl_shader.setVec3 ("pjtPos1"       , pjt1.Position);
+    bowl_shader.setVec3 ("pjtFront1"     , pjt1.Front);
+    bowl_shader.setVec3 ("pjtPos2"       , pjt2.Position);
+    bowl_shader.setVec3 ("pjtFront2"     , pjt2.Front);
     //vertex shader
-    bowl_shader.setMat4("pjtView1", pjt.GetViewMatrix());
-    bowl_shader.setMat4("pjtProjection1", bias_mat * pjt_proj);
+    bowl_shader.setMat4 ("pjtView1"      , pjt1.GetViewMatrix());
+    bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
+    bowl_shader.setMat4 ("pjtView2"      , pjt2.GetViewMatrix());
+    bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
     
-    pjt.ProcessMouseMovement(0, 100);
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
