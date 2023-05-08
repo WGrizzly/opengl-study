@@ -168,9 +168,9 @@ int main()
     bowl_shader.setVec3 ("pjtPos2"       , pjt2.Position);
     bowl_shader.setVec3 ("pjtFront2"     , pjt2.Front);
     //vertex shader
-    bowl_shader.setMat4 ("pjtView1"      , pjt1.GetViewMatrix());
+    // bowl_shader.setMat4 ("pjtView1"      , pjt1.GetViewMatrix());
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
-    bowl_shader.setMat4 ("pjtView2"      , pjt2.GetViewMatrix());
+    // bowl_shader.setMat4 ("pjtView2"      , pjt2.GetViewMatrix());
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
     
     while (!glfwWindowShouldClose(window))
@@ -198,7 +198,8 @@ int main()
 
         
         bowl_shader.use();
-        // bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
+        bowl_shader.setMat4("pjtView1", pjt1.GetViewMatrix());
+        bowl_shader.setMat4("pjtView2", pjt2.GetViewMatrix());
 
         glm::mat4 bowl_model = glm::mat4(1.0f);
         // bowl_model = glm::translate(bowl_model, glm::vec3(0.f, 0.f, 0.f));
@@ -241,9 +242,15 @@ void process_input(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) //GLFW_KEY_LEFT_CONTROL
         cam.ProcessKeyboard(DOWN, delta_time);
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        cam.rotateYaw(0.3);
+    {
+        pjt1.rotateYaw(0.3);
+        pjt2.rotateYaw(0.3);
+    }
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        cam.rotateYaw(-0.3);
+    {
+        pjt1.rotateYaw(-0.3);
+        pjt2.rotateYaw(-0.3);
+    }
     // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
     //     light_toggle = !light_toggle;
 }

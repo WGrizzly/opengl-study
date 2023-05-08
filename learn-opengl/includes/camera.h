@@ -190,6 +190,28 @@ public:
             Zoom = 45.0f;
     }
 
+    //this rotation performes with z-axis, not up-vector
+    void rotateYaw(float deg)
+    {
+        glm::mat4 m = glm::mat4(1.0f);
+        m = glm::rotate(m, glm::radians(deg), glm::vec3(0.f, 0.f, 1.f));
+
+        glm::vec4 F(Front, 1.0f);
+        F = m * F;
+        Front = glm::normalize( glm::vec3(F) );
+
+        glm::vec4 R(Right, 1.0f);
+        R = m * R;
+        Right = glm::normalize( glm::vec3(R) );
+
+        glm::vec4 U(Up, 1.0f);
+        U = m * U;
+        Up = glm::normalize( glm::vec3(U) );
+
+        // Yaw += deg;
+        // updateCameraVectors();
+    }
+
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
