@@ -155,12 +155,12 @@ int main()
     bowl_shader.use();
     //fragment shader
     bowl_shader.setInt("pjtTexture", 0);
-    bowl_shader.setVec3("pjtPos", pjt.Position);
-    bowl_shader.setVec3("pjtFront", pjt.Front);
     bowl_shader.setFloat("pjtFOV", pjt_fov);
+    bowl_shader.setVec3("pjtPos1", pjt.Position);
+    bowl_shader.setVec3("pjtFront1", pjt.Front);
     //vertex shader
-    bowl_shader.setMat4("pjtView", pjt.GetViewMatrix());
-    bowl_shader.setMat4("pjtProjection", bias_mat * pjt_proj);
+    bowl_shader.setMat4("pjtView1", pjt.GetViewMatrix());
+    bowl_shader.setMat4("pjtProjection1", bias_mat * pjt_proj);
     
     pjt.ProcessMouseMovement(0, 100);
     while (!glfwWindowShouldClose(window))
