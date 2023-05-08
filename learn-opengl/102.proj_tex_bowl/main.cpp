@@ -61,7 +61,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "basic color", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "bowl texture projection test", NULL, NULL);
     if(window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -154,8 +154,9 @@ int main()
 
     // projector setting for test
     {
-        pjt1.ProcessMouseMovement(0, 100);
-        pjt2.ProcessMouseMovement(100, 0);
+        pjt1.ProcessMouseMovement(0, 150);
+        pjt2.ProcessMouseMovement(0, 150);
+        pjt2.rotateYaw(-60.f);
     }
 
     bowl_shader.use();
@@ -239,8 +240,12 @@ void process_input(GLFWwindow *window)
         cam.ProcessKeyboard(UP, delta_time);
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) //GLFW_KEY_LEFT_CONTROL
         cam.ProcessKeyboard(DOWN, delta_time);
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
-        light_toggle = !light_toggle;
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cam.rotateYaw(0.3);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cam.rotateYaw(-0.3);
+    // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
+    //     light_toggle = !light_toggle;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

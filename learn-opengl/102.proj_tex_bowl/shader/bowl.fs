@@ -45,5 +45,13 @@ void main()
         result += texture(pjtTexture, uv2);
     }
 
+    if( 1.0 >= uv1.x && uv1.x >= 0. &&
+        1.0 >= uv1.y && uv1.y >= 0. &&
+        1.0 >= uv2.x && uv2.x >= 0. &&
+        1.0 >= uv2.y && uv2.y >= 0.)
+    {
+        result = vec4(0.6);
+    }
+
     FragColor = result;
 }
