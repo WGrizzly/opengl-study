@@ -54,6 +54,45 @@ struct vert_info_test
     glm::vec3 norm;
 };
 
+//ntl, ntr, nbl, nbr, ftl, ftr, fbl, fbr
+std::vector<glm::vec3> getFrustumPoints(const Camera &cam, float fov, float aspect_ratio, float near, float far)
+{
+    float Hnear = 2 * tan(glm::radians(fov) / 2) * near;
+    float Wnear = Hnear * aspect_ratio;
+    float Hfar = 2 * tan(glm::radians(fov) / 2) * far;
+    float Wfar = Hfar * aspect_ratio;
+
+    glm::vec3 Cnear = cam.Position + cam.Front * near;
+    glm::vec3 Cfar = cam.Position + cam.Front * far;
+
+    glm::vec3 A = (cam.Up * Hnear) / 2.0f;
+    glm::vec3 B = (cam.Right * Wnear) / 2.0f;
+    glm::vec3 C = (cam.Up * Hfar) / 2.0f;
+    glm::vec3 D = (cam.Right * Wfar) / 2.0f;
+
+    glm::vec3 ntl = Cnear + A - B;
+    glm::vec3 ntr = Cnear + A + B;
+    glm::vec3 nbl = Cnear - A - B;
+    glm::vec3 nbr = Cnear - A + B;
+
+    glm::vec3 ftl = Cfar + C - D;
+    glm::vec3 ftr = Cfar + C + D;
+    glm::vec3 fbl = Cfar - C - D;
+    glm::vec3 fbr = Cfar - C + D;
+
+    std::vector<glm::vec3> rv;
+    rv.push_back(ntl);
+    rv.push_back(ntr);
+    rv.push_back(nbl);
+    rv.push_back(nbr);
+
+    rv.push_back(ftl);
+    rv.push_back(ftr);
+    rv.push_back(fbl);
+    rv.push_back(fbr);
+
+    return rv;
+}
 int main()
 {
     glfwInit();
@@ -99,6 +138,7 @@ int main()
             for(auto vert : mesh.vertices)
             {
                 vert_info vi;
+                // vi.pos  = vert.Position * 2.f;
                 vi.pos  = vert.Position;
                 vi.norm = vert.Normal;
                 vi.uv.x = 0.f;
@@ -113,29 +153,55 @@ int main()
         }
     }
 
-
     unsigned int bowlVAO, bowlVBO, bowlEBO;
-    glGenVertexArrays(1, &bowlVAO);
-    glGenBuffers(1, &bowlVBO);
-    glGenBuffers(1, &bowlEBO);
+    {
+        glGenVertexArrays(1, &bowlVAO);
+        glGenBuffers(1, &bowlVBO);
+        glGenBuffers(1, &bowlEBO);
 
-    glBindVertexArray(bowlVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex_bowl.size(), &vec_vertex_bowl.front(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bowlEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_indice.size(), &vec_indice.front(), GL_STATIC_DRAW);
+        glBindVertexArray(bowlVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, bowlVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vert_info) * vec_vertex_bowl.size(), &vec_vertex_bowl.front(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bowlEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_indice.size(), &vec_indice.front(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(sizeof(float) * 3));
-    glEnableVertexAttribArray(2);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glBindVertexArray(0); 
-    
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+        glEnableVertexAttribArray(2);
 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
+    std::string frustum_shader_vs_path(BASE_PATH);    frustum_shader_vs_path += "102.proj_tex_bowl/shader/frustum.vs";
+    std::string frustum_shader_fs_path(BASE_PATH);    frustum_shader_fs_path += "102.proj_tex_bowl/shader/frustum.fs";
+    Shader frustum_shader(frustum_shader_vs_path.c_str(), frustum_shader_fs_path.c_str());
+
+    std::vector<glm::vec3> vec_frustum_pt;
+    std::vector<unsigned int> vec_frustum_idx;
+
+
+    unsigned int frustumVAO, frustumVBO, frustumEBO;
+    {
+        glGenVertexArrays(1, &frustumVAO);
+        glGenBuffers(1, &frustumVBO);
+        glGenBuffers(1, &frustumEBO);
+
+        glBindVertexArray(frustumVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_pt.size(), &vec_frustum_pt.front(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumVBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_frustum_idx.size(), &vec_frustum_idx.front(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);        
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 
     stbi_set_flip_vertically_on_load(true);
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
