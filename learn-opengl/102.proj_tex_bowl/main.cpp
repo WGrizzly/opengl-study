@@ -180,8 +180,53 @@ int main()
     std::string frustum_shader_fs_path(BASE_PATH);    frustum_shader_fs_path += "102.proj_tex_bowl/shader/frustum.fs";
     Shader frustum_shader(frustum_shader_vs_path.c_str(), frustum_shader_fs_path.c_str());
 
-    std::vector<glm::vec3> vec_frustum_pt;
-    std::vector<unsigned int> vec_frustum_idx;
+    std::vector<glm::vec3> vec_frustum_pt = {
+        {-1.0f, -1.0f, -1.0f}, // nbl
+        {1.0f, -1.0f, -1.0f},  // nbr
+        {1.0f, 1.0f, -1.0f},   // ntr
+        {-1.0f, 1.0f, -1.0f},  // ntl
+        {-1.0f, -1.0f, 1.0f},  // fbt
+        {1.0f, -1.0f, 1.0f},   // fbt
+        {1.0f, 1.0f, 1.0f},    // fbt
+        {-1.0f, 1.0f, 1.0f}    // fbt
+    };
+    {
+        glm::mat4 cam_proj_init = glm::perspective(
+            glm::radians(cam.Zoom),
+            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
+            0.1f,
+            10.f);
+        glm::mat4 cam_view_init = cam.GetViewMatrix();
+        glm::mat4 im = glm::inverse(cam_proj_init * cam_view_init);
+
+        for(auto& pt : vec_frustum_pt)
+        {
+            // glm::vec4 org = glm::vec4(pt, 1.0);
+            // org = org * cam_proj_init;
+            // pt = glm::vec3(org) / org.w;
+            glm::vec4 new_pt = im * glm::vec4(pt, 1.0);
+            pt = glm::vec3(new_pt) / new_pt.w;
+        }
+    }
+    std::vector<unsigned int> vec_frustum_idx = {
+        //near plane
+        0, 1,
+        1, 2,
+        2, 3,
+        3, 0,
+
+        //far plane
+        4, 5,
+        5, 6,
+        6, 7,
+        7, 4,
+
+        //connect plane
+        0, 4,
+        1, 5,
+        2, 6,
+        3, 7
+    };
 
 
     unsigned int frustumVAO, frustumVBO, frustumEBO;
@@ -193,7 +238,7 @@ int main()
         glBindVertexArray(frustumVAO);
         glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_pt.size(), &vec_frustum_pt.front(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumVBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_frustum_idx.size(), &vec_frustum_idx.front(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);        
@@ -210,11 +255,10 @@ int main()
     
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
     const float pjt_fov = glm::radians(20.f);
-    glm::mat4 pjt_proj = glm::perspective(
-                                        pjt_fov, 
-                                        1.f, //aspect_ratio,
-                                        0.1f,
-                                        100.f);
+    const float pjt_ar = 1.f;
+    const float pjt_near = 0.1f;
+    const float pjt_far = 100.f;
+    glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
 
@@ -234,11 +278,12 @@ int main()
     bowl_shader.setVec3 ("pjtPos2"       , pjt2.Position);
     bowl_shader.setVec3 ("pjtFront2"     , pjt2.Front);
     //vertex shader
-    // bowl_shader.setMat4 ("pjtView1"      , pjt1.GetViewMatrix());
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
-    // bowl_shader.setMat4 ("pjtView2"      , pjt2.GetViewMatrix());
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
-    
+
+    frustum_shader.use();
+    frustum_shader.setMat4("pjt_proj", pjt_proj);
+
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
@@ -275,6 +320,14 @@ int main()
         bowl_shader.setMat4("camProj", cam_proj);
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
+
+        frustum_shader.use();
+        glBindVertexArray(frustumVAO);
+        frustum_shader.setMat4("cam_proj", cam_proj);
+        frustum_shader.setMat4("cam_view", cam_view);
+        frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
+        glLineWidth(2.0f);
+        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
