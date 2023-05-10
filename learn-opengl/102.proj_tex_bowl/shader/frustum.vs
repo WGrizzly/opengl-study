@@ -10,8 +10,15 @@ uniform mat4 pjt_view;
 
 void main()
 {
-    vec4 FragPos = vec4(aPos, 1.0);
-    gl_Position = cam_proj * cam_view * FragPos;
+    vec4 ndc_pt = vec4(aPos, 1.0);
+    mat4 inv = inverse(cam_proj * cam_view);
+    vec4 world_pos = inv * ndc_pt;
+
+    gl_Position = cam_proj * cam_view * world_pos;
+
+    // vec4 FragPos = vec4(aPos, 1.0);
+    // gl_Position = cam_proj * cam_view * FragPos;
+
    //  gl_Position = inverse(cam_view * cam_view) * FragPos;
    // gl_Position = FragPos;
  

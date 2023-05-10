@@ -199,14 +199,14 @@ int main()
         glm::mat4 cam_view_init = cam.GetViewMatrix();
         glm::mat4 im = glm::inverse(cam_proj_init * cam_view_init);
 
-        for(auto& pt : vec_frustum_pt)
-        {
-            // glm::vec4 org = glm::vec4(pt, 1.0);
-            // org = org * cam_proj_init;
-            // pt = glm::vec3(org) / org.w;
-            glm::vec4 new_pt = im * glm::vec4(pt, 1.0);
-            pt = glm::vec3(new_pt) / new_pt.w;
-        }
+        // for(auto& pt : vec_frustum_pt)
+        // {
+        //     // glm::vec4 org = glm::vec4(pt, 1.0);
+        //     // org = org * cam_proj_init;
+        //     // pt = glm::vec3(org) / org.w;
+        //     glm::vec4 new_pt = im * glm::vec4(pt, 1.0);
+        //     pt = glm::vec3(new_pt) / new_pt.w;
+        // }
     }
     std::vector<unsigned int> vec_frustum_idx = {
         //near plane
