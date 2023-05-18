@@ -257,7 +257,7 @@ int main()
     const float pjt_fov = glm::radians(20.f);
     const float pjt_ar = 1.f;
     const float pjt_near = 0.1f;
-    const float pjt_far = 100.f;
+    const float pjt_far = 50.f;
     glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
@@ -325,8 +325,11 @@ int main()
         glBindVertexArray(frustumVAO);
         frustum_shader.setMat4("cam_proj", cam_proj);
         frustum_shader.setMat4("cam_view", cam_view);
+        frustum_shader.setMat4("pjt_proj", pjt_proj);
         frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
         glLineWidth(2.0f);
+        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
