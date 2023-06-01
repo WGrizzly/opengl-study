@@ -60,10 +60,8 @@ struct Plane
     float d;
     Plane(const glm::vec3& a, const glm::vec3& b, const glm::vec3 &c)
     {
-        // glm::vec3 ab = glm::normalize(b - a);
-        // glm::vec3 ac = glm::normalize(c - a);
-        glm::vec3 ab = b - a;
-        glm::vec3 ac = c - a;
+        glm::vec3 ab = glm::normalize(b - a);
+        glm::vec3 ac = glm::normalize(c - a);
         norm = glm::normalize( glm::cross(ab, ac) );
         // norm = glm::cross(ab, ac);
         d = -glm::dot(norm, a);
@@ -73,14 +71,16 @@ struct Plane
 /*
     Up, Down, Left, Right order
 
-        3______________ 2
-        /|            /|
-       / |           / |
-      /  |          /  |
-   7 /___|_________/   |
-    |    |        | 6  |
-    |    |________|____|
-    |   / 0       |   / 1
+         3______________ 2
+         /|            /|
+        / |           / |
+       /  |          /  |
+      /   |         /   |
+   7 /____|________/    |
+    |     |       | 6   |
+    |     |_______|_____|
+    |    / 0      |    / 1
+    |   /         |   /
     |  /          |  /
     | /           | /
     |/____________|/
@@ -328,7 +328,6 @@ int main()
     //vertex shader
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
-    bowl_shader.setMat4 ("pjtProjOrg", pjt_proj);
 
     frustum_shader.use();
     frustum_shader.setMat4("pjt_proj", pjt_proj);
@@ -369,8 +368,8 @@ int main()
         bowl_shader.setMat4("camProj", cam_proj);
 
         std::vector<glm::vec3> vec_frustum_world_pt;
-        glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-        // glm::mat4 im = glm::inverse(cam_proj * cam_view);
+        // glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+        glm::mat4 im = glm::inverse(cam_proj * cam_view);
         for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
         {
             glm::vec4 ndc_pt = glm::vec4(vec_frustum_ndc_pt[c], 1.0);
@@ -388,50 +387,21 @@ int main()
         bowl_shader.setFloat("pjtFrustumPlanes[2].d",    vec_side_planes[2].d);
         bowl_shader.setVec3 ("pjtFrustumPlanes[3].norm", vec_side_planes[3].norm);
         bowl_shader.setFloat("pjtFrustumPlanes[3].d",    vec_side_planes[3].d);
+
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
 
-
-        // frustum_shader.setVec3("pjtFrustPts[0]",   vec_frustum_world_pt[0]);
-        // frustum_shader.setVec3("pjtFrustPts[1]",   vec_frustum_world_pt[1]);
-        // frustum_shader.setVec3("pjtFrustPts[2]",   vec_frustum_world_pt[2]);
-        // frustum_shader.setVec3("pjtFrustPts[3]",   vec_frustum_world_pt[3]);
-        // frustum_shader.setVec3("pjtFrustPts[4]",   vec_frustum_world_pt[4]);
-        // frustum_shader.setVec3("pjtFrustPts[5]",   vec_frustum_world_pt[5]);
-        // frustum_shader.setVec3("pjtFrustPts[6]",   vec_frustum_world_pt[6]);
-        // frustum_shader.setVec3("pjtFrustPts[7]",   vec_frustum_world_pt[7]);
-
-        vec_frustum_ndc_pt[0] = glm::vec3( -0.75f, -0.75f,  1.0f );
-        vec_frustum_ndc_pt[1] = glm::vec3(  0.75f, -0.75f,  1.0f );
-        vec_frustum_ndc_pt[2] = glm::vec3(  0.75f,  0.75f,  1.0f );
-        vec_frustum_ndc_pt[3] = glm::vec3( -0.75f,  0.75f,  1.0f );
-        vec_frustum_ndc_pt[4] = glm::vec3( -0.75f, -0.75f, -1.0f );
-        vec_frustum_ndc_pt[5] = glm::vec3(  0.75f, -0.75f, -1.0f );
-        vec_frustum_ndc_pt[6] = glm::vec3(  0.75f,  0.75f, -1.0f );
-        vec_frustum_ndc_pt[7] = glm::vec3( -0.75f,  0.75f, -1.0f );
-        // vec_frustum_ndc_pt[0] = glm::vec3( vec_frustum_world_pt[0] );
-        // vec_frustum_ndc_pt[1] = glm::vec3( vec_frustum_world_pt[1] );
-        // vec_frustum_ndc_pt[2] = glm::vec3( vec_frustum_world_pt[2] );
-        // vec_frustum_ndc_pt[3] = glm::vec3( vec_frustum_world_pt[3] );
-        // vec_frustum_ndc_pt[4] = glm::vec3( vec_frustum_world_pt[4] );
-        // vec_frustum_ndc_pt[5] = glm::vec3( vec_frustum_world_pt[5] );
-        // vec_frustum_ndc_pt[6] = glm::vec3( vec_frustum_world_pt[6] );
-        // vec_frustum_ndc_pt[7] = glm::vec3( vec_frustum_world_pt[7] );
-
-        glBindVertexArray(frustumVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_ndc_pt.size(), &vec_frustum_ndc_pt.front(), GL_STATIC_DRAW);
-
         frustum_shader.use();
+        glBindVertexArray(frustumVAO);
         frustum_shader.setMat4("cam_proj", cam_proj);
         frustum_shader.setMat4("cam_view", cam_view);
         frustum_shader.setMat4("pjt_proj", pjt_proj);
         frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
-        // glDrawElements(GL_TRIANGLES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
         // frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
         // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
