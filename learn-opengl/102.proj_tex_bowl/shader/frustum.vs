@@ -8,6 +8,8 @@ uniform mat4 cam_view;
 uniform mat4 pjt_proj;
 uniform mat4 pjt_view;
 
+uniform vec3 pjtFrustPts[8];
+
 void main()
 {
     vec4 ndc_pt = vec4(aPos, 1.0);
@@ -15,4 +17,5 @@ void main()
     vec4 world_pos = inv * ndc_pt;
 
     gl_Position = cam_proj * cam_view * world_pos;
+    // gl_Position = cam_proj * cam_view * vec4(aPos, 1.0);
 }

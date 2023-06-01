@@ -3,6 +3,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 
+out vec3 frag_pos;
 out vec3 normal;
 
 //camera info
@@ -22,6 +23,8 @@ out vec4 pjtTexCoord2;
 void main()
 {
     vec3 FragPos = vec3(model * vec4(aPos, 1.0));
+    frag_pos = FragPos;
+    
     vec3 Normal = mat3(transpose(inverse(model))) * aNormal;  
 
     pjtTexCoord1 = pjtProjection1 * pjtView1 * vec4(FragPos, 1.0);

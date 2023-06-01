@@ -54,6 +54,54 @@ struct vert_info_test
     glm::vec3 norm;
 };
 
+struct Plane
+{
+    glm::vec3 norm;
+    float d;
+    Plane(const glm::vec3& a, const glm::vec3& b, const glm::vec3 &c)
+    {
+        // glm::vec3 ab = glm::normalize(b - a);
+        // glm::vec3 ac = glm::normalize(c - a);
+        glm::vec3 ab = b - a;
+        glm::vec3 ac = c - a;
+        norm = glm::normalize( glm::cross(ab, ac) );
+        // norm = glm::cross(ab, ac);
+        d = -glm::dot(norm, a);
+    }
+};
+
+/*
+    Up, Down, Left, Right order
+
+        3______________ 2
+        /|            /|
+       / |           / |
+      /  |          /  |
+   7 /___|_________/   |
+    |    |        | 6  |
+    |    |________|____|
+    |   / 0       |   / 1
+    |  /          |  /
+    | /           | /
+    |/____________|/
+   4               5
+*/
+std::vector<Plane> calc_side_planes(const std::vector<glm::vec3>& pts)
+{
+    assert(pts.size() == 8);
+
+    //each plane's normal direction is inside of frustum
+    std::vector<Plane> rv;
+    rv.push_back( Plane(pts[2], pts[6], pts[7]) );
+    rv.push_back( Plane(pts[1], pts[5], pts[4]) );
+    rv.push_back( Plane(pts[0], pts[4], pts[7]) );
+    rv.push_back( Plane(pts[1], pts[2], pts[6]) );
+
+    // rv.push_back( Plane(pts[0], pts[7], pts[3]) );
+    // rv.push_back( Plane(pts[1], pts[6], pts[2]) );
+    return rv;
+}
+
 //ntl, ntr, nbl, nbr, ftl, ftr, fbl, fbr
 std::vector<glm::vec3> getFrustumPoints(const Camera &cam, float fov, float aspect_ratio, float near, float far)
 {
@@ -180,15 +228,15 @@ int main()
     std::string frustum_shader_fs_path(BASE_PATH);    frustum_shader_fs_path += "102.proj_tex_bowl/shader/frustum.fs";
     Shader frustum_shader(frustum_shader_vs_path.c_str(), frustum_shader_fs_path.c_str());
 
-    std::vector<glm::vec3> vec_frustum_pt = {
-        {-1.0f, -1.0f, -1.0f}, // nbl
-        {1.0f, -1.0f, -1.0f},  // nbr
-        {1.0f, 1.0f, -1.0f},   // ntr
-        {-1.0f, 1.0f, -1.0f},  // ntl
-        {-1.0f, -1.0f, 1.0f},  // fbt
-        {1.0f, -1.0f, 1.0f},   // fbt
-        {1.0f, 1.0f, 1.0f},    // fbt
-        {-1.0f, 1.0f, 1.0f}    // fbt
+    std::vector<glm::vec3> vec_frustum_ndc_pt = {
+        { -1.0f, -1.0f,  1.0f },    // FBL
+        {  1.0f, -1.0f,  1.0f },    // FBR
+        {  1.0f,  1.0f,  1.0f },    // FTR
+        { -1.0f,  1.0f,  1.0f },    // FTL
+        { -1.0f, -1.0f, -1.0f },    // NBL
+        {  1.0f, -1.0f, -1.0f },    // NBR
+        {  1.0f,  1.0f, -1.0f },    // NTR
+        { -1.0f,  1.0f, -1.0f }     // NTL
     };
     {
         glm::mat4 cam_proj_init = glm::perspective(
@@ -199,7 +247,7 @@ int main()
         glm::mat4 cam_view_init = cam.GetViewMatrix();
         glm::mat4 im = glm::inverse(cam_proj_init * cam_view_init);
 
-        // for(auto& pt : vec_frustum_pt)
+        // for(auto& pt : vec_frustum_ndc_pt)
         // {
         //     // glm::vec4 org = glm::vec4(pt, 1.0);
         //     // org = org * cam_proj_init;
@@ -237,7 +285,7 @@ int main()
 
         glBindVertexArray(frustumVAO);
         glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_pt.size(), &vec_frustum_pt.front(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_ndc_pt.size(), &vec_frustum_ndc_pt.front(), GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_frustum_idx.size(), &vec_frustum_idx.front(), GL_STATIC_DRAW);
 
@@ -280,6 +328,7 @@ int main()
     //vertex shader
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
+    bowl_shader.setMat4 ("pjtProjOrg", pjt_proj);
 
     frustum_shader.use();
     frustum_shader.setMat4("pjt_proj", pjt_proj);
@@ -318,19 +367,71 @@ int main()
         bowl_shader.setMat4("model", bowl_model);
         bowl_shader.setMat4("camView", cam_view);
         bowl_shader.setMat4("camProj", cam_proj);
+
+        std::vector<glm::vec3> vec_frustum_world_pt;
+        glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+        // glm::mat4 im = glm::inverse(cam_proj * cam_view);
+        for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+        {
+            glm::vec4 ndc_pt = glm::vec4(vec_frustum_ndc_pt[c], 1.0);
+            glm::vec4 world_pt = im * ndc_pt;
+            // glm::vec4 view_pt = cam_proj * cam_view * world_pt;
+            vec_frustum_world_pt.push_back(world_pt);
+        }
+
+        std::vector<Plane> vec_side_planes = calc_side_planes(vec_frustum_world_pt);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[0].norm", vec_side_planes[0].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[0].d",    vec_side_planes[0].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[1].norm", vec_side_planes[1].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[1].d",    vec_side_planes[1].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[2].norm", vec_side_planes[2].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[2].d",    vec_side_planes[2].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[3].norm", vec_side_planes[3].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[3].d",    vec_side_planes[3].d);
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
 
-        frustum_shader.use();
+
+        // frustum_shader.setVec3("pjtFrustPts[0]",   vec_frustum_world_pt[0]);
+        // frustum_shader.setVec3("pjtFrustPts[1]",   vec_frustum_world_pt[1]);
+        // frustum_shader.setVec3("pjtFrustPts[2]",   vec_frustum_world_pt[2]);
+        // frustum_shader.setVec3("pjtFrustPts[3]",   vec_frustum_world_pt[3]);
+        // frustum_shader.setVec3("pjtFrustPts[4]",   vec_frustum_world_pt[4]);
+        // frustum_shader.setVec3("pjtFrustPts[5]",   vec_frustum_world_pt[5]);
+        // frustum_shader.setVec3("pjtFrustPts[6]",   vec_frustum_world_pt[6]);
+        // frustum_shader.setVec3("pjtFrustPts[7]",   vec_frustum_world_pt[7]);
+
+        vec_frustum_ndc_pt[0] = glm::vec3( -0.75f, -0.75f,  1.0f );
+        vec_frustum_ndc_pt[1] = glm::vec3(  0.75f, -0.75f,  1.0f );
+        vec_frustum_ndc_pt[2] = glm::vec3(  0.75f,  0.75f,  1.0f );
+        vec_frustum_ndc_pt[3] = glm::vec3( -0.75f,  0.75f,  1.0f );
+        vec_frustum_ndc_pt[4] = glm::vec3( -0.75f, -0.75f, -1.0f );
+        vec_frustum_ndc_pt[5] = glm::vec3(  0.75f, -0.75f, -1.0f );
+        vec_frustum_ndc_pt[6] = glm::vec3(  0.75f,  0.75f, -1.0f );
+        vec_frustum_ndc_pt[7] = glm::vec3( -0.75f,  0.75f, -1.0f );
+        // vec_frustum_ndc_pt[0] = glm::vec3( vec_frustum_world_pt[0] );
+        // vec_frustum_ndc_pt[1] = glm::vec3( vec_frustum_world_pt[1] );
+        // vec_frustum_ndc_pt[2] = glm::vec3( vec_frustum_world_pt[2] );
+        // vec_frustum_ndc_pt[3] = glm::vec3( vec_frustum_world_pt[3] );
+        // vec_frustum_ndc_pt[4] = glm::vec3( vec_frustum_world_pt[4] );
+        // vec_frustum_ndc_pt[5] = glm::vec3( vec_frustum_world_pt[5] );
+        // vec_frustum_ndc_pt[6] = glm::vec3( vec_frustum_world_pt[6] );
+        // vec_frustum_ndc_pt[7] = glm::vec3( vec_frustum_world_pt[7] );
+
         glBindVertexArray(frustumVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_ndc_pt.size(), &vec_frustum_ndc_pt.front(), GL_STATIC_DRAW);
+
+        frustum_shader.use();
         frustum_shader.setMat4("cam_proj", cam_proj);
         frustum_shader.setMat4("cam_view", cam_view);
         frustum_shader.setMat4("pjt_proj", pjt_proj);
         frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
+        // glDrawElements(GL_TRIANGLES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-        frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        // frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
