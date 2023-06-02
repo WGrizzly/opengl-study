@@ -75,20 +75,20 @@ struct Plane
 /*
     Up, Down, Left, Right order
 
-         3______________ 2
-         /|            /|
-        / |           / |
-       /  |          /  |
-      /   |         /   |
-   7 /____|________/    |
-    |     |       | 6   |
-    |     |_______|_____|
-    |    / 0      |    / 1
-    |   /         |   /
-    |  /          |  /
-    | /           | /
-    |/____________|/
-   4               5
+         7_______________ 6
+         /|             /|
+        / |            / |
+       /  |           /  |
+      /   |          /   |
+   3 /____|_________/    |
+    |     |        | 2   |
+    |     |________|_____|
+    |    / 4       |    / 5
+    |   /          |   /
+    |  /           |  /
+    | /            | /
+    |/_____________|/
+   0               1
 */
 std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
 {
@@ -100,9 +100,6 @@ std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
     rv.push_back( Plane(pts[1], pts[5], pts[4]) );
     rv.push_back( Plane(pts[0], pts[4], pts[7]) );
     rv.push_back( Plane(pts[1], pts[2], pts[6]) );
-
-    // rv.push_back( Plane(pts[0], pts[7], pts[3]) );
-    // rv.push_back( Plane(pts[1], pts[6], pts[2]) );
     return rv;
 }
 
@@ -293,6 +290,9 @@ int main()
     glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
     glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
     bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+    // glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
+    // bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+
 
     // projector setting for test
     {
