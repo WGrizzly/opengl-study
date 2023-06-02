@@ -74,14 +74,14 @@ void main()
         result = vec4(0.8);
     }
 
-    // for(int c = 0; c < NR_PLANES; c++)
-    // {
-    //     if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
-    //     {
-    //         result = vec4(.0, .0, 1.0, 0.0);
-    //         break;
-    //     }
-    // }
+    for(int c = 0; c < NR_PLANES; c++)
+    {
+        if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
+        {
+            result = vec4(.0, .0, 1.0, 0.0);
+            break;
+        }
+    }
 
     // if(pointIsOnPlane(pjtFrustumPlanes[0], frag_pos))
     //     result = vec4(1.0, 1.0, 0.0, 0.0);

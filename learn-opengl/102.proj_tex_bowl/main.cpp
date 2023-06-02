@@ -58,8 +58,12 @@ struct Plane
 {
     glm::vec3 norm;
     float d;
-    Plane(const glm::vec3& a, const glm::vec3& b, const glm::vec3 &c)
+    Plane(const glm::vec4& a_, const glm::vec4& b_, const glm::vec4 &c_)
     {
+        glm::vec3 a = glm::vec3(a_) / a_[3];
+        glm::vec3 b = glm::vec3(b_) / b_[3];
+        glm::vec3 c = glm::vec3(c_) / c_[3];
+
         glm::vec3 ab = glm::normalize(b - a);
         glm::vec3 ac = glm::normalize(c - a);
         norm = glm::normalize( glm::cross(ab, ac) );
@@ -86,7 +90,7 @@ struct Plane
     |/____________|/
    4               5
 */
-std::vector<Plane> calc_side_planes(const std::vector<glm::vec3>& pts)
+std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
 {
     assert(pts.size() == 8);
 
@@ -228,15 +232,15 @@ int main()
     std::string frustum_shader_fs_path(BASE_PATH);    frustum_shader_fs_path += "102.proj_tex_bowl/shader/frustum.fs";
     Shader frustum_shader(frustum_shader_vs_path.c_str(), frustum_shader_fs_path.c_str());
 
-    std::vector<glm::vec3> vec_frustum_ndc_pt = {
-        { -1.0f, -1.0f,  1.0f },    // FBL
-        {  1.0f, -1.0f,  1.0f },    // FBR
-        {  1.0f,  1.0f,  1.0f },    // FTR
-        { -1.0f,  1.0f,  1.0f },    // FTL
-        { -1.0f, -1.0f, -1.0f },    // NBL
-        {  1.0f, -1.0f, -1.0f },    // NBR
-        {  1.0f,  1.0f, -1.0f },    // NTR
-        { -1.0f,  1.0f, -1.0f }     // NTL
+    std::vector<glm::vec4> vec_frustum_ndc_pt = {
+        { -1.0f, -1.0f,  1.0f, 1.0f },    // FBL
+        {  1.0f, -1.0f,  1.0f, 1.0f },    // FBR
+        {  1.0f,  1.0f,  1.0f, 1.0f },    // FTR
+        { -1.0f,  1.0f,  1.0f, 1.0f },    // FTL
+        { -1.0f, -1.0f, -1.0f, 1.0f },    // NBL
+        {  1.0f, -1.0f, -1.0f, 1.0f },    // NBR
+        {  1.0f,  1.0f, -1.0f, 1.0f },    // NTR
+        { -1.0f,  1.0f, -1.0f, 1.0f }     // NTL
     };
     {
         glm::mat4 cam_proj_init = glm::perspective(
@@ -276,26 +280,6 @@ int main()
         3, 7
     };
 
-
-    unsigned int frustumVAO, frustumVBO, frustumEBO;
-    {
-        glGenVertexArrays(1, &frustumVAO);
-        glGenBuffers(1, &frustumVBO);
-        glGenBuffers(1, &frustumEBO);
-
-        glBindVertexArray(frustumVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * vec_frustum_ndc_pt.size(), &vec_frustum_ndc_pt.front(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumEBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_frustum_idx.size(), &vec_frustum_idx.front(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);        
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-
     stbi_set_flip_vertically_on_load(true);
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
     unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
@@ -329,8 +313,42 @@ int main()
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
 
+    bool direct_test = true;
+    unsigned int frustumVAO, frustumVBO, frustumEBO;
+    {
+        if(direct_test)
+        {
+            glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+            for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+            {
+                glm::vec4 world_pt = im * vec_frustum_ndc_pt[c];
+                vec_frustum_ndc_pt[c] = world_pt;
+
+                std::cout << "world pt at (" << c << "), " << world_pt[0] << ", "
+                << world_pt[1] << ", "<< world_pt[2] << ", "<< world_pt[3] << std::endl;
+            }
+        }
+
+        glGenVertexArrays(1, &frustumVAO);
+        glGenBuffers(1, &frustumVBO);
+        glGenBuffers(1, &frustumEBO);
+
+        glBindVertexArray(frustumVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, frustumVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_frustum_ndc_pt.size(), &vec_frustum_ndc_pt.front(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, frustumEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_frustum_idx.size(), &vec_frustum_idx.front(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);        
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+
     frustum_shader.use();
     frustum_shader.setMat4("pjt_proj", pjt_proj);
+    frustum_shader.setBool("direct_test", direct_test);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -367,16 +385,18 @@ int main()
         bowl_shader.setMat4("camView", cam_view);
         bowl_shader.setMat4("camProj", cam_proj);
 
-        std::vector<glm::vec3> vec_frustum_world_pt;
-        // glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-        glm::mat4 im = glm::inverse(cam_proj * cam_view);
+        std::vector<glm::vec4> vec_frustum_world_pt;
+        glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+        // glm::mat4 im = glm::inverse(cam_proj * cam_view);
+        // for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+        // {
+        //     glm::vec4 ndc_pt = vec_frustum_ndc_pt[c];
+        //     glm::vec4 world_pt = im * ndc_pt;
+        //     // glm::vec4 view_pt = cam_proj * cam_view * world_pt;
+        //     vec_frustum_world_pt.push_back(world_pt);
+        // }
         for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
-        {
-            glm::vec4 ndc_pt = glm::vec4(vec_frustum_ndc_pt[c], 1.0);
-            glm::vec4 world_pt = im * ndc_pt;
-            // glm::vec4 view_pt = cam_proj * cam_view * world_pt;
-            vec_frustum_world_pt.push_back(world_pt);
-        }
+            vec_frustum_world_pt.push_back(vec_frustum_ndc_pt[c]);
 
         std::vector<Plane> vec_side_planes = calc_side_planes(vec_frustum_world_pt);
         bowl_shader.setVec3 ("pjtFrustumPlanes[0].norm", vec_side_planes[0].norm);
@@ -391,11 +411,12 @@ int main()
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
 
+        
         frustum_shader.use();
         glBindVertexArray(frustumVAO);
         frustum_shader.setMat4("cam_proj", cam_proj);
         frustum_shader.setMat4("cam_view", cam_view);
-        frustum_shader.setMat4("pjt_proj", pjt_proj);
+        // frustum_shader.setMat4("pjt_proj", pjt_proj);
         frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
