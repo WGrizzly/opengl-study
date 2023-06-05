@@ -22,7 +22,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void process_input(GLFWwindow *window);
 unsigned int load_texture(const char *path);
-unsigned int load_texture_clamp_boarder(char const * path);
+unsigned int load_texture_clamp_boarder(char const * path, int& cols, int& rows, int& chan);
 
 
 const unsigned int SCR_WIDTH = 1600;
@@ -239,24 +239,6 @@ int main()
         {  1.0f,  1.0f, -1.0f, 1.0f },    // NTR
         { -1.0f,  1.0f, -1.0f, 1.0f }     // NTL
     };
-    {
-        glm::mat4 cam_proj_init = glm::perspective(
-            glm::radians(cam.Zoom),
-            static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT),
-            0.1f,
-            10.f);
-        glm::mat4 cam_view_init = cam.GetViewMatrix();
-        glm::mat4 im = glm::inverse(cam_proj_init * cam_view_init);
-
-        // for(auto& pt : vec_frustum_ndc_pt)
-        // {
-        //     // glm::vec4 org = glm::vec4(pt, 1.0);
-        //     // org = org * cam_proj_init;
-        //     // pt = glm::vec3(org) / org.w;
-        //     glm::vec4 new_pt = im * glm::vec4(pt, 1.0);
-        //     pt = glm::vec3(new_pt) / new_pt.w;
-        // }
-    }
     std::vector<unsigned int> vec_frustum_idx = {
         //near plane
         0, 1,
@@ -279,24 +261,34 @@ int main()
 
     stbi_set_flip_vertically_on_load(true);
     std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
-    unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str());
+    int tex_cols, tex_rows, tex_chan;
+    unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str(), tex_cols, tex_rows, tex_chan);
+    std::cout << "projector texture size: " << tex_cols << ", " << tex_rows << ", " << tex_chan << std::endl;
 
     
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
     const float pjt_fov = glm::radians(20.f);
-    const float pjt_ar = 1.f;
+    const float pjt_ar = static_cast<float>(tex_cols) / static_cast<float>(tex_rows);   //projector aspect ratio
     const float pjt_near = 0.1f;
     const float pjt_far = 50.f;
     glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
-    glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
-    bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+    // glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
+    // bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
     // glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
     // bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+    glm::mat4 bias_mat = glm::mat4(1.0f);
+    bias_mat = glm::translate(bias_mat, glm::vec3(0.5f));
+    bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
+    std::cout << "projector aspect ratio: " << pjt_ar << std::endl;
+    std::cout << bias_mat[0][0] << ", " << bias_mat[1][0] << ", " << bias_mat[2][0] << ", " << bias_mat[3][0] << std::endl
+              << bias_mat[0][1] << ", " << bias_mat[1][1] << ", " << bias_mat[2][1] << ", " << bias_mat[3][1] << std::endl
+              << bias_mat[0][2] << ", " << bias_mat[1][2] << ", " << bias_mat[2][2] << ", " << bias_mat[3][2] << std::endl
+              << bias_mat[0][3] << ", " << bias_mat[1][3] << ", " << bias_mat[2][3] << ", " << bias_mat[3][3] << std::endl; 
 
 
     // projector setting for test
     {
-        pjt1.ProcessMouseMovement(0, 150);
+        pjt1.ProcessMouseMovement(0, 50);
         pjt2.ProcessMouseMovement(0, 150);
         pjt2.rotateYaw(-60.f);
     }
@@ -312,6 +304,7 @@ int main()
     //vertex shader
     bowl_shader.setMat4 ("pjtProjection1", bias_mat * pjt_proj);
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
+    
 
     bool direct_test = true;
     unsigned int frustumVAO, frustumVBO, frustumEBO;
@@ -323,9 +316,8 @@ int main()
             {
                 glm::vec4 world_pt = im * vec_frustum_ndc_pt[c];
                 vec_frustum_ndc_pt[c] = world_pt;
-
-                std::cout << "world pt at (" << c << "), " << world_pt[0] << ", "
-                << world_pt[1] << ", "<< world_pt[2] << ", "<< world_pt[3] << std::endl;
+                // std::cout << "world pt at (" << c << "), " << world_pt[0] << ", "
+                // << world_pt[1] << ", "<< world_pt[2] << ", "<< world_pt[3] << std::endl;
             }
         }
 
@@ -398,15 +390,15 @@ int main()
         for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
             vec_frustum_world_pt.push_back(vec_frustum_ndc_pt[c]);
 
-        std::vector<Plane> vec_side_planes = calc_side_planes(vec_frustum_world_pt);
-        bowl_shader.setVec3 ("pjtFrustumPlanes[0].norm", vec_side_planes[0].norm);
-        bowl_shader.setFloat("pjtFrustumPlanes[0].d",    vec_side_planes[0].d);
-        bowl_shader.setVec3 ("pjtFrustumPlanes[1].norm", vec_side_planes[1].norm);
-        bowl_shader.setFloat("pjtFrustumPlanes[1].d",    vec_side_planes[1].d);
-        bowl_shader.setVec3 ("pjtFrustumPlanes[2].norm", vec_side_planes[2].norm);
-        bowl_shader.setFloat("pjtFrustumPlanes[2].d",    vec_side_planes[2].d);
-        bowl_shader.setVec3 ("pjtFrustumPlanes[3].norm", vec_side_planes[3].norm);
-        bowl_shader.setFloat("pjtFrustumPlanes[3].d",    vec_side_planes[3].d);
+        std::vector<Plane> vec_side_planes_1 = calc_side_planes(vec_frustum_world_pt);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[0].norm", vec_side_planes_1[0].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[0].d",    vec_side_planes_1[0].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[1].norm", vec_side_planes_1[1].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[1].d",    vec_side_planes_1[1].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[2].norm", vec_side_planes_1[2].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[2].d",    vec_side_planes_1[2].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[3].norm", vec_side_planes_1[3].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[3].d",    vec_side_planes_1[3].d);
 
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
@@ -542,7 +534,7 @@ unsigned int load_texture(char const * path)
     return textureID;
 }
 
-unsigned int load_texture_clamp_boarder(char const * path)
+unsigned int load_texture_clamp_boarder(char const * path, int& cols, int& rows, int& chan)
 {
     unsigned int textureID;
     glGenTextures(1, &textureID);
@@ -568,10 +560,18 @@ unsigned int load_texture_clamp_boarder(char const * path)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        cols = width;
+        rows = height;
+        chan = nrComponents;
+
         stbi_image_free(data);
     }
     else
     {
+        cols = -1;
+        rows = -1;
+        chan = -1;
+
         std::cout << "Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }

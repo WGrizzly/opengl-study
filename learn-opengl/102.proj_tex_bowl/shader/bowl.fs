@@ -57,13 +57,14 @@ void main()
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
         1.0 >= uv1.y && uv1.y >= 0.)
     {
-        result += texture(pjtTexture, uv1);
+        // result += texture(pjtTexture, uv1);
+        result += textureProj(pjtTexture, pjtTexCoord1);
     }
     vec2 uv2 = pjtTexCoord2.xy / pjtTexCoord2.z;
     if( 1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        result += texture(pjtTexture, uv2);
+        //result += texture(pjtTexture, uv2);
     }
 
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
@@ -71,7 +72,7 @@ void main()
         1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        result = vec4(0.8);
+        //result = vec4(0.8);
     }
 
     for(int c = 0; c < NR_PLANES; c++)
