@@ -5,9 +5,15 @@ struct Plane {
     float d;
 };
 
-#define NR_PLANES 4
+struct Line{
+    vec3 point;
+    vec3 direction;
+};
+
+#define NR_PLANES 8
 
 in vec3 frag_pos;
+in vec4 frag_pos4;
 in vec3 normal;
 in vec4 pjtTexCoord1;
 in vec4 pjtTexCoord2;
@@ -22,6 +28,9 @@ uniform vec3 pjtFront2;
 
 
 uniform Plane pjtFrustumPlanes[NR_PLANES];
+uniform Plane pjtBlendPlane;
+uniform Line up_line;
+uniform Line down_line;
 
 out vec4 FragColor;
 
@@ -33,6 +42,14 @@ bool are_equal(float a, float b)
 
 bool pointIsOnPlane(Plane p, vec3 pos) {
     return abs(dot(p.norm, pos) + p.d) < EPSILON;
+}
+
+float getDistance(vec3 point, vec3 linePoint, vec3 lineDirection)
+{
+    vec3 diff = point - linePoint;
+    vec3 crossProduct = cross(diff, lineDirection);
+    float distance = length(crossProduct) / length(lineDirection);
+    return distance;
 }
 
 void main()
@@ -64,7 +81,7 @@ void main()
     if( 1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        //result += texture(pjtTexture, uv2);
+        result += texture(pjtTexture, uv2);
     }
 
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
@@ -72,7 +89,7 @@ void main()
         1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        //result = vec4(0.8);
+        result = vec4(0.8);
     }
 
     for(int c = 0; c < NR_PLANES; c++)
@@ -84,15 +101,12 @@ void main()
         }
     }
 
-    // if(pointIsOnPlane(pjtFrustumPlanes[0], frag_pos))
-    //     result = vec4(1.0, 1.0, 0.0, 0.0);
-    // else if(pointIsOnPlane(pjtFrustumPlanes[1], frag_pos))
-    //     result = vec4(1.0, 1.0, 0.0, 0.0);
-    // else if(pointIsOnPlane(pjtFrustumPlanes[2], frag_pos))
-    //     result = vec4(1.0, 1.0, 0.0, 0.0);
-    // else if(pointIsOnPlane(pjtFrustumPlanes[3], frag_pos))
-    //     result = vec4(1.0, 1.0, 0.0, 0.0);
-    
+    if(pointIsOnPlane(pjtBlendPlane, frag_pos))
+        result = vec4(1.0, .0, .0, 0.0);
+    if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
+        result = vec4(1.0, 0.0, 1.0, 0.0);
+    if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
+        result = vec4(0.0, 1.0, 1.0, 0.0);
 
     FragColor = result;
 }

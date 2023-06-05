@@ -19,6 +19,6 @@ void main()
 
     vec4 world_pos = inv * ndc_pt;
 
-    // gl_Position = cam_proj * cam_view * world_pos;
-    gl_Position = cam_proj * cam_view * aPos;
+    gl_Position = cam_proj * cam_view * world_pos;
+    // gl_Position = cam_proj * cam_view * aPos;
 }

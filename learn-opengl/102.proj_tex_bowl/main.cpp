@@ -70,7 +70,86 @@ struct Plane
         // norm = glm::cross(ab, ac);
         d = -glm::dot(norm, a);
     }
+    Plane(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c)
+    {
+        glm::vec3 ab = glm::normalize(b - a);
+        glm::vec3 ac = glm::normalize(c - a);
+        norm = glm::normalize( glm::cross(ab, ac) );
+        // norm = glm::cross(ab, ac);
+        d = -glm::dot(norm, a);
+    }
 };
+
+struct Line
+{
+    glm::vec3 point;
+    glm::vec3 direction;
+};
+
+Line get_intersection_line(const Plane& p1, const Plane& p2)
+{
+    //implemented based on link: https://www.omnicalculator.com/math/line-of-intersection-of-two-planes
+    //assume that plane's normal is already normalize.
+    glm::vec3 cross = glm::cross(p1.norm, p2.norm);
+    if(glm::length(cross) < 1e-6)
+    {
+        throw std::runtime_error("two plane is parallel");
+    }
+
+    float dot = glm::dot(p1.norm, p2.norm);
+
+    float d1 = p1.d;
+    float d2 = p2.d;
+
+    float k1 = (d1 - d2* dot) / (1 - dot);
+    float k2 = (d2 - d1* dot) / (1 - dot);
+
+    glm::vec3 k1n1 = k1*p1.norm;
+    glm::vec3 k2n2 = k2*p2.norm;
+
+    Line intersection_line;
+    intersection_line.point = k1n1 + k2n2;
+    intersection_line.direction = cross;
+    return intersection_line;
+}
+
+Line intersectPlanes(const Plane& p1, const Plane& p2)
+{
+    // Line direction is cross product of the plane normals
+    glm::vec3 line_dir = glm::cross(p1.norm, p2.norm);
+
+    // Line direction should be normalized
+    line_dir = glm::normalize(line_dir);
+
+    // We solve the system of equations to find a point on the line
+    glm::mat3 A(p1.norm, p2.norm, line_dir);
+    glm::vec3 b(-p1.d, -p2.d, 0);
+
+    // The solution is a point on the line
+    glm::vec3 line_point = glm::inverse(A) * b;
+
+    // The result is the line of intersection
+    return Line {line_point, line_dir};
+}
+
+Line intersect_line(const Plane& p1, const Plane& p2)
+{
+    glm::vec3 p3_normal = glm::cross(p1.norm, p2.norm);
+    float det = glm::length(p3_normal);
+    if(det < 1e-6)
+    {
+        throw std::runtime_error("two plane is parallel");
+    }
+
+    glm::vec3 pt = ((glm::cross(p3_normal, p2.norm) * p1.d) + 
+                    (glm::cross(p1.norm, p3_normal) * p2.d)) / det;
+    glm::vec3 norm = p3_normal;
+
+    Line inter_line;
+    inter_line.point = pt;
+    inter_line.direction = norm;
+    return inter_line;
+}
 
 /*
     Up, Down, Left, Right order
@@ -89,6 +168,8 @@ struct Plane
     | /            | /
     |/_____________|/
    0               1
+
+   returns up, down, left, right
 */
 std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
 {
@@ -103,45 +184,6 @@ std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
     return rv;
 }
 
-//ntl, ntr, nbl, nbr, ftl, ftr, fbl, fbr
-std::vector<glm::vec3> getFrustumPoints(const Camera &cam, float fov, float aspect_ratio, float near, float far)
-{
-    float Hnear = 2 * tan(glm::radians(fov) / 2) * near;
-    float Wnear = Hnear * aspect_ratio;
-    float Hfar = 2 * tan(glm::radians(fov) / 2) * far;
-    float Wfar = Hfar * aspect_ratio;
-
-    glm::vec3 Cnear = cam.Position + cam.Front * near;
-    glm::vec3 Cfar = cam.Position + cam.Front * far;
-
-    glm::vec3 A = (cam.Up * Hnear) / 2.0f;
-    glm::vec3 B = (cam.Right * Wnear) / 2.0f;
-    glm::vec3 C = (cam.Up * Hfar) / 2.0f;
-    glm::vec3 D = (cam.Right * Wfar) / 2.0f;
-
-    glm::vec3 ntl = Cnear + A - B;
-    glm::vec3 ntr = Cnear + A + B;
-    glm::vec3 nbl = Cnear - A - B;
-    glm::vec3 nbr = Cnear - A + B;
-
-    glm::vec3 ftl = Cfar + C - D;
-    glm::vec3 ftr = Cfar + C + D;
-    glm::vec3 fbl = Cfar - C - D;
-    glm::vec3 fbr = Cfar - C + D;
-
-    std::vector<glm::vec3> rv;
-    rv.push_back(ntl);
-    rv.push_back(ntr);
-    rv.push_back(nbl);
-    rv.push_back(nbr);
-
-    rv.push_back(ftl);
-    rv.push_back(ftr);
-    rv.push_back(fbl);
-    rv.push_back(fbr);
-
-    return rv;
-}
 int main()
 {
     glfwInit();
@@ -272,23 +314,18 @@ int main()
     const float pjt_near = 0.1f;
     const float pjt_far = 50.f;
     glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
-    // glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
-    // bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
-    // glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f));
-    // bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
-    glm::mat4 bias_mat = glm::mat4(1.0f);
-    bias_mat = glm::translate(bias_mat, glm::vec3(0.5f));
-    bias_mat = glm::scale(bias_mat, glm::vec3(0.5f));
-    std::cout << "projector aspect ratio: " << pjt_ar << std::endl;
-    std::cout << bias_mat[0][0] << ", " << bias_mat[1][0] << ", " << bias_mat[2][0] << ", " << bias_mat[3][0] << std::endl
-              << bias_mat[0][1] << ", " << bias_mat[1][1] << ", " << bias_mat[2][1] << ", " << bias_mat[3][1] << std::endl
-              << bias_mat[0][2] << ", " << bias_mat[1][2] << ", " << bias_mat[2][2] << ", " << bias_mat[3][2] << std::endl
-              << bias_mat[0][3] << ", " << bias_mat[1][3] << ", " << bias_mat[2][3] << ", " << bias_mat[3][3] << std::endl; 
+    glm::mat4 bias_mat = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f));
+    bias_mat = glm::scale(bias_mat, glm::vec3(0.52f));
+    // std::cout << "projector aspect ratio: " << pjt_ar << std::endl;
+    // std::cout << bias_mat[0][0] << ", " << bias_mat[1][0] << ", " << bias_mat[2][0] << ", " << bias_mat[3][0] << std::endl
+    //           << bias_mat[0][1] << ", " << bias_mat[1][1] << ", " << bias_mat[2][1] << ", " << bias_mat[3][1] << std::endl
+    //           << bias_mat[0][2] << ", " << bias_mat[1][2] << ", " << bias_mat[2][2] << ", " << bias_mat[3][2] << std::endl
+    //           << bias_mat[0][3] << ", " << bias_mat[1][3] << ", " << bias_mat[2][3] << ", " << bias_mat[3][3] << std::endl; 
 
 
     // projector setting for test
     {
-        pjt1.ProcessMouseMovement(0, 50);
+        pjt1.ProcessMouseMovement(0, 150);
         pjt2.ProcessMouseMovement(0, 150);
         pjt2.rotateYaw(-60.f);
     }
@@ -306,7 +343,7 @@ int main()
     bowl_shader.setMat4 ("pjtProjection2", bias_mat * pjt_proj);
     
 
-    bool direct_test = true;
+    bool direct_test = false;
     unsigned int frustumVAO, frustumVBO, frustumEBO;
     {
         if(direct_test)
@@ -377,20 +414,32 @@ int main()
         bowl_shader.setMat4("camView", cam_view);
         bowl_shader.setMat4("camProj", cam_proj);
 
-        std::vector<glm::vec4> vec_frustum_world_pt;
-        glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-        // glm::mat4 im = glm::inverse(cam_proj * cam_view);
-        // for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
-        // {
-        //     glm::vec4 ndc_pt = vec_frustum_ndc_pt[c];
-        //     glm::vec4 world_pt = im * ndc_pt;
-        //     // glm::vec4 view_pt = cam_proj * cam_view * world_pt;
-        //     vec_frustum_world_pt.push_back(world_pt);
-        // }
-        for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
-            vec_frustum_world_pt.push_back(vec_frustum_ndc_pt[c]);
+        std::vector<glm::vec4> vec_frustum_world_pt1, vec_frustum_world_pt2;
+        if (!direct_test)
+        {
+            glm::mat4 im1 = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+            for (size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+            {
+                glm::vec4 ndc_pt = vec_frustum_ndc_pt[c];
+                glm::vec4 world_pt = im1 * ndc_pt;
+                vec_frustum_world_pt1.push_back(world_pt);
+            }
 
-        std::vector<Plane> vec_side_planes_1 = calc_side_planes(vec_frustum_world_pt);
+            glm::mat4 im2 = glm::inverse(pjt_proj * pjt2.GetViewMatrix());
+            for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+            {
+                glm::vec4 ndc_pt = vec_frustum_ndc_pt[c];
+                glm::vec4 world_pt = im2 * ndc_pt;
+                vec_frustum_world_pt2.push_back(world_pt);
+            }
+        }
+        else
+        {
+            for(size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+                vec_frustum_world_pt1.push_back(vec_frustum_ndc_pt[c]);
+        }
+
+        std::vector<Plane> vec_side_planes_1 = calc_side_planes(vec_frustum_world_pt1);
         bowl_shader.setVec3 ("pjtFrustumPlanes[0].norm", vec_side_planes_1[0].norm);
         bowl_shader.setFloat("pjtFrustumPlanes[0].d",    vec_side_planes_1[0].d);
         bowl_shader.setVec3 ("pjtFrustumPlanes[1].norm", vec_side_planes_1[1].norm);
@@ -399,6 +448,37 @@ int main()
         bowl_shader.setFloat("pjtFrustumPlanes[2].d",    vec_side_planes_1[2].d);
         bowl_shader.setVec3 ("pjtFrustumPlanes[3].norm", vec_side_planes_1[3].norm);
         bowl_shader.setFloat("pjtFrustumPlanes[3].d",    vec_side_planes_1[3].d);
+        std::vector<Plane> vec_side_planes_2 = calc_side_planes(vec_frustum_world_pt2);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[4].norm", vec_side_planes_2[0].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[4].d",    vec_side_planes_2[0].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[5].norm", vec_side_planes_2[1].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[5].d",    vec_side_planes_2[1].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[6].norm", vec_side_planes_2[2].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[6].d",    vec_side_planes_2[2].d);
+        bowl_shader.setVec3 ("pjtFrustumPlanes[7].norm", vec_side_planes_2[3].norm);
+        bowl_shader.setFloat("pjtFrustumPlanes[7].d",    vec_side_planes_2[3].d);
+        {
+            const Plane& frust1_right = vec_side_planes_1[3];
+            const Plane& frust1_down  = vec_side_planes_1[1];
+            const Plane& frust2_left  = vec_side_planes_2[2];
+            const Plane& frust2_down  = vec_side_planes_2[1];
+
+            // Line up_line = get_intersection_line(frust1_right, frust2_left);
+            // Line up_line = intersectPlanes(frust1_right, frust2_left);
+            Line up_line = intersect_line(frust1_right, frust2_left);
+            bowl_shader.setVec3("up_line.point", up_line.point);
+            bowl_shader.setVec3("up_line.direction", up_line.direction);
+
+            // Line down_line = get_intersection_line(frust1_down, frust2_down);
+            // Line down_line = intersectPlanes(frust1_down, frust2_down);
+            Line down_line = intersect_line(frust1_down, frust2_down);
+            bowl_shader.setVec3("down_line.point", down_line.point);
+            bowl_shader.setVec3("down_line.direction", down_line.direction);
+
+            Plane blend_plane( down_line.point, up_line.point, up_line.point + up_line.direction * 1.f);
+            bowl_shader.setVec3("pjtBlendPlane.norm", blend_plane.norm);
+            bowl_shader.setFloat("pjtBlendPlane.d", blend_plane.d);
+        }
 
         glBindVertexArray(bowlVAO);
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
@@ -408,12 +488,12 @@ int main()
         glBindVertexArray(frustumVAO);
         frustum_shader.setMat4("cam_proj", cam_proj);
         frustum_shader.setMat4("cam_view", cam_view);
-        // frustum_shader.setMat4("pjt_proj", pjt_proj);
+        frustum_shader.setMat4("pjt_proj", pjt_proj);
         frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-        // frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
