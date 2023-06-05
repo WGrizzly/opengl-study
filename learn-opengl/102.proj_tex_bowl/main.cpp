@@ -134,6 +134,8 @@ Line intersectPlanes(const Plane& p1, const Plane& p2)
 
 Line intersect_line(const Plane& p1, const Plane& p2)
 {
+    //https://stackoverflow.com/questions/6408670/line-of-intersection-between-two-planes
+
     glm::vec3 p3_normal = glm::cross(p1.norm, p2.norm);
     float det = glm::length(p3_normal);
     if(det < 1e-6)
