@@ -11,6 +11,7 @@ struct Line{
 };
 
 #define NR_PLANES 8
+#define BLEND_WIDTH 0.1
 
 in vec3 frag_pos;
 in vec4 frag_pos4;
@@ -89,7 +90,21 @@ void main()
         1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        result = vec4(0.8);
+        // float perpen_dist = abs(pjtBlendPlane.norm.x * frag_pos.x + 
+        //                         pjtBlendPlane.norm.y * frag_pos.y + 
+        //                         pjtBlendPlane.z*frag_pos.z + pjtBlendPlane.d) / 
+        //                         sqrt(pjtBlendPlane.norm.x * frag_pos.x + 
+        //                         pjtBlendPlane.norm.y * frag_pos.y + 
+        //                         pjtBlendPlane.z*frag_pos.z + pjtBlendPlane.d);
+
+        float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
+        float denominator = length(pjtBlendPlane.norm);
+
+        float dist = abs(numerator) / denominator;
+        if(BLEND_WIDTH > dist)        
+            result = vec4(0.3);
+        else
+            result = vec4(0.8);
     }
 
     for(int c = 0; c < NR_PLANES; c++)
