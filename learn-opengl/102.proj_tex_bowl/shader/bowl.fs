@@ -11,7 +11,7 @@ struct Line{
 };
 
 #define NR_PLANES 8
-#define BLEND_WIDTH 0.1
+#define BLEND_WIDTH 0.15
 
 in vec3 frag_pos;
 in vec4 frag_pos4;
@@ -76,13 +76,16 @@ void main()
         1.0 >= uv1.y && uv1.y >= 0.)
     {
         // result += texture(pjtTexture, uv1);
-        result += textureProj(pjtTexture, pjtTexCoord1);
+        // result += textureProj(pjtTexture, pjtTexCoord1);
+
+        result = textureProj(pjtTexture, pjtTexCoord1);
     }
     vec2 uv2 = pjtTexCoord2.xy / pjtTexCoord2.z;
     if( 1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        result += texture(pjtTexture, uv2);
+        // result += texture(pjtTexture, uv2);
+        result = (1.f - texture(pjtTexture, uv2));
     }
 
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
@@ -90,21 +93,45 @@ void main()
         1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        // float perpen_dist = abs(pjtBlendPlane.norm.x * frag_pos.x + 
-        //                         pjtBlendPlane.norm.y * frag_pos.y + 
-        //                         pjtBlendPlane.z*frag_pos.z + pjtBlendPlane.d) / 
-        //                         sqrt(pjtBlendPlane.norm.x * frag_pos.x + 
-        //                         pjtBlendPlane.norm.y * frag_pos.y + 
-        //                         pjtBlendPlane.z*frag_pos.z + pjtBlendPlane.d);
+        // float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
+        // float denominator = length(pjtBlendPlane.norm);
+        // float dist = abs(numerator) / denominator;
+        // if(BLEND_WIDTH > dist)        
+        // {
+        //     result = vec4(0.3);
+        // }
+        // else
+        // {
+        //     result = vec4(0.8);
+        // }
 
         float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
         float denominator = length(pjtBlendPlane.norm);
+        float dist = numerator / denominator;
+        float abs_dist = abs(dist);
 
-        float dist = abs(numerator) / denominator;
-        if(BLEND_WIDTH > dist)        
-            result = vec4(0.3);
-        else
-            result = vec4(0.8);
+        vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
+        vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
+        if(0.f > dist)  //left side
+        {
+            if(abs_dist > BLEND_WIDTH)
+                result = tex1_intensity;
+            else
+            {
+                float w = abs_dist / BLEND_WIDTH;
+                result = tex1_intensity * w + tex2_intensity * (1.f - w);
+            }
+        }
+        else    //right side
+        {
+            if(abs_dist > BLEND_WIDTH)
+                result = tex2_intensity;
+            else
+            {
+                float w = abs_dist / BLEND_WIDTH;
+                result = tex2_intensity * w + tex1_intensity * (1.f - w);
+            }
+        }
     }
 
     for(int c = 0; c < NR_PLANES; c++)
