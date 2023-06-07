@@ -12,6 +12,7 @@ struct Line{
 
 #define NR_PLANES 8
 #define BLEND_WIDTH 0.15
+#define PI 3.1415926535897932384626433832795
 
 in vec3 frag_pos;
 in vec4 frag_pos4;
@@ -93,62 +94,80 @@ void main()
         1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
-        // float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
-        // float denominator = length(pjtBlendPlane.norm);
-        // float dist = abs(numerator) / denominator;
-        // if(BLEND_WIDTH > dist)        
-        // {
-        //     result = vec4(0.3);
-        // }
-        // else
-        // {
-        //     result = vec4(0.8);
-        // }
-
         float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
         float denominator = length(pjtBlendPlane.norm);
         float dist = numerator / denominator;
-        float abs_dist = abs(dist);
+        float dist_abs = abs(dist);
+        float dist_blend = dist / BLEND_WIDTH;
+        float sigma = 0.23;
+        float sigma_sqr = sigma * sigma;
+        float sigma_max_val = 1 / (sqrt(2 * PI)*sigma);
+        bool use_gaussian = true;
 
         vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
         vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
         if(0.f > dist)  //left side
         {
-            if(abs_dist > BLEND_WIDTH)
+            if(dist_abs > BLEND_WIDTH)
                 result = tex1_intensity;
             else
             {
-                float w = abs_dist / BLEND_WIDTH;
+                float w = 0.f;
+                if(!use_gaussian)
+                    w = abs(dist_blend) / 2.f;
+                else
+                {
+                    w = 1 / (sqrt(2 * PI)*sigma);
+                    w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
+
+                    w /= sigma_max_val;
+                    w /= 2.f;
+                    w = 1.f - w;
+                }
+
                 result = tex1_intensity * w + tex2_intensity * (1.f - w);
             }
         }
         else    //right side
         {
-            if(abs_dist > BLEND_WIDTH)
+            if(dist_abs > BLEND_WIDTH)
                 result = tex2_intensity;
             else
             {
-                float w = abs_dist / BLEND_WIDTH;
+                float w = 0.f;
+                if(!use_gaussian)
+                    w = abs(dist_blend) / 2.f;
+                else
+                {
+                    w = 1 / (sqrt(2 * PI)*sigma);
+                    w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
+                    
+                    w /= sigma_max_val;
+                    w /= 2.f;
+                    w = 1.f - w;
+                }
+
                 result = tex2_intensity * w + tex1_intensity * (1.f - w);
             }
         }
+
     }
 
-    for(int c = 0; c < NR_PLANES; c++)
-    {
-        if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
-        {
-            result = vec4(.0, .0, 1.0, 0.0);
-            break;
-        }
-    }
+    // for(int c = 0; c < NR_PLANES; c++)
+    // {
+    //     if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
+    //     {
+    //         result = vec4(.0, .0, 1.0, 0.0);
+    //         break;
+    //     }
+    // }
 
-    if(pointIsOnPlane(pjtBlendPlane, frag_pos))
-        result = vec4(1.0, .0, .0, 0.0);
-    if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
-        result = vec4(1.0, 0.0, 1.0, 0.0);
-    if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
-        result = vec4(0.0, 1.0, 1.0, 0.0);
+    // if(pointIsOnPlane(pjtBlendPlane, frag_pos))
+    //     result = vec4(1.0, .0, .0, 0.0);
+    // if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
+    //     result = vec4(1.0, 0.0, 1.0, 0.0);
+    // if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
+    //     result = vec4(0.0, 1.0, 1.0, 0.0);
 
     FragColor = result;
 }

@@ -3,6 +3,8 @@
 #include "../includes/model.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -486,16 +488,16 @@ int main()
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
 
         
-        frustum_shader.use();
-        glBindVertexArray(frustumVAO);
-        frustum_shader.setMat4("cam_proj", cam_proj);
-        frustum_shader.setMat4("cam_view", cam_view);
-        frustum_shader.setMat4("pjt_proj", pjt_proj);
-        frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
-        glLineWidth(2.0f);
-        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-        frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        // frustum_shader.use();
+        // glBindVertexArray(frustumVAO);
+        // frustum_shader.setMat4("cam_proj", cam_proj);
+        // frustum_shader.setMat4("cam_view", cam_view);
+        // frustum_shader.setMat4("pjt_proj", pjt_proj);
+        // frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
+        // glLineWidth(2.0f);
+        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        // frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
@@ -508,6 +510,24 @@ int main()
 
     glfwTerminate();
     return 0;
+}
+
+void save_image(const char *filepath, GLFWwindow *w)
+{
+    int width, height;
+    glfwGetFramebufferSize(w, &width, &height);
+
+    GLsizei nrChannels = 3;
+    GLsizei stride = nrChannels * width;
+    stride += (stride % 4) ? (4 - stride % 4) : 0;
+
+    GLsizei bufferSize = stride * height;
+    std::vector<char> buffer(bufferSize);
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
+    stbi_flip_vertically_on_write(true);
+    stbi_write_png(filepath, width, height, nrChannels, buffer.data(), stride);
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
@@ -538,6 +558,11 @@ void process_input(GLFWwindow *window)
     {
         pjt1.rotateYaw(-0.3);
         pjt2.rotateYaw(-0.3);
+    }
+    if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+    {
+        std::cout << "save buffer as image." << std::endl;
+        save_image("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/outputs/3d-blend-test.png", window);
     }
     // if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
     //     light_toggle = !light_toggle;
