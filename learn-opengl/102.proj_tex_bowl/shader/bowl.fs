@@ -122,7 +122,23 @@ void main()
         else
         {
             //gaussian blending
+            float w = 0.f;
+            if( 1.f > dist_blend)
+            {
+                float sigma = 0.27;
+                float sigma_sqr = sigma * sigma;
+                float sigma_max_val = 1 / (sqrt(2 * PI)*sigma); 
+                float gval = sigma_max_val * exp( -dist_blend*dist_blend / (2 * sigma_sqr));
+                gval /= sigma_max_val;
+                gval *= 0.5f;
 
+                w = gval;
+            }
+
+            if( 0.f > dist )
+                result = tex1_intensity * (1.f - w) + tex2_intensity * w;
+            else
+                result = tex2_intensity * (1.f - w) + tex1_intensity * w;
         }
         // float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
         // float denominator = length(pjtBlendPlane.norm);
