@@ -20,7 +20,8 @@ in vec3 normal;
 in vec4 pjtTexCoord1;
 in vec4 pjtTexCoord2;
 
-uniform sampler2D pjtTexture;
+uniform sampler2D pjtTexture0;
+uniform sampler2D pjtTexture1;
 float pjtFOV;    //in radian
 
 uniform vec3 pjtPos1;
@@ -79,14 +80,14 @@ void main()
         // result += texture(pjtTexture, uv1);
         // result += textureProj(pjtTexture, pjtTexCoord1);
 
-        result = textureProj(pjtTexture, pjtTexCoord1);
+        result = textureProj(pjtTexture0, pjtTexCoord1);
     }
     vec2 uv2 = pjtTexCoord2.xy / pjtTexCoord2.z;
     if( 1.0 >= uv2.x && uv2.x >= 0. &&
         1.0 >= uv2.y && uv2.y >= 0.)
     {
         // result += texture(pjtTexture, uv2);
-        result = (1.f - texture(pjtTexture, uv2));
+        result = texture(pjtTexture1, uv2);
     }
 
     //case of overlapped region
@@ -101,8 +102,8 @@ void main()
         float dist_abs = abs(dist);
         float dist_blend = dist_abs / BLEND_WIDTH;
 
-        vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
-        vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
+        vec4 tex1_intensity = textureProj(pjtTexture0, pjtTexCoord1);
+        vec4 tex2_intensity = textureProj(pjtTexture1, pjtTexCoord2);
 
         if(true)
         {
@@ -140,84 +141,23 @@ void main()
             else
                 result = tex2_intensity * (1.f - w) + tex1_intensity * w;
         }
-        // float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
-        // float denominator = length(pjtBlendPlane.norm);
-        // float dist = numerator / denominator;
-        // float dist_abs = abs(dist);
-        // float dist_blend = dist / BLEND_WIDTH;
-        // float sigma = 0.27;
-        // float sigma_sqr = sigma * sigma;
-        // float sigma_max_val = 1 / (sqrt(2 * PI)*sigma);
-        // bool use_gaussian = true;
-        //
-        // vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
-        // vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
-        // if(0.f > dist)  //left side
-        // {
-        //     if(dist_abs > BLEND_WIDTH)
-        //         result = tex1_intensity;
-        //     else
-        //     {
-        //         float w = 0.f;
-        //         if(!use_gaussian)
-        //             w = abs(dist_blend) / 2.f;
-        //         else
-        //         {
-        //             w = 1 / (sqrt(2 * PI)*sigma);
-        //             w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
-        //
-        //             w /= sigma_max_val;
-        //             w /= 2.f;
-        //         }
-        //
-        //         // result = tex1_intensity * (1.f - w) + tex2_intensity * w;
-        //         // result = tex1_intensity * w + tex2_intensity * (1.f - w);
-        //         // result = tex1_intensity;
-        //      
-        //         // result = tex2_intensity * (1.f - w) + tex1_intensity * w;
-        //         result = tex1_intensity * (1.f - w) + tex2_intensity * w;
-        //     }
-        // }
-        // else    //right side
-        // {
-        //     if(dist_abs > BLEND_WIDTH)
-        //         result = tex2_intensity;
-        //     else
-        //     {
-        //         float w = 0.f;
-        //         if(!use_gaussian)
-        //             w = abs(dist_blend) / 2.f;
-        //         else
-        //         {
-        //             w = 1 / (sqrt(2 * PI)*sigma);
-        //             w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
-        //          
-        //             w /= sigma_max_val;
-        //             w /= 2.f;
-        //         }
-        //
-        //         // result = tex2_intensity * (1.f - w) + tex1_intensity * w;
-        //         // result = tex2_intensity * w + tex1_intensity * (1.f - w);
-        //         result = tex1_intensity * w + tex2_intensity * (1.f - w);
-        //     }
-        // }
     }
 
-    // for(int c = 0; c < NR_PLANES; c++)
-    // {
-    //     if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
-    //     {
-    //         result = vec4(.0, .0, 1.0, 0.0);
-    //         break;
-    //     }
-    // }
+    for(int c = 0; c < NR_PLANES; c++)
+    {
+        if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
+        {
+            result = vec4(.0, .0, 1.0, 0.0);
+            break;
+        }
+    }
 
-    // if(pointIsOnPlane(pjtBlendPlane, frag_pos))
-    //     result = vec4(1.0, .0, .0, 0.0);
-    // if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
-    //     result = vec4(1.0, 0.0, 1.0, 0.0);
-    // if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
-    //     result = vec4(0.0, 1.0, 1.0, 0.0);
+    if(pointIsOnPlane(pjtBlendPlane, frag_pos))
+        result = vec4(1.0, .0, .0, 0.0);
+    if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
+        result = vec4(1.0, 0.0, 1.0, 0.0);
+    if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
+        result = vec4(0.0, 1.0, 1.0, 0.0);
 
     FragColor = result;
 }

@@ -233,8 +233,7 @@ int main()
             for(auto vert : mesh.vertices)
             {
                 vert_info vi;
-                // vi.pos  = vert.Position * 2.f;
-                vi.pos  = vert.Position;
+                vi.pos  = vert.Position * 2.f;
                 vi.norm = vert.Normal;
                 vi.uv.x = 0.f;
                 vi.uv.y = 0.f;
@@ -306,15 +305,20 @@ int main()
     };
 
     stbi_set_flip_vertically_on_load(true);
-    std::string pjt_map_path(RESOURCE_PATH);    pjt_map_path += "sx-logo-white.jpg";
-    int tex_cols, tex_rows, tex_chan;
-    unsigned int pjt_map = load_texture_clamp_boarder(pjt_map_path.c_str(), tex_cols, tex_rows, tex_chan);
-    std::cout << "projector texture size: " << tex_cols << ", " << tex_rows << ", " << tex_chan << std::endl;
+    std::string pjt_map1_path(RESOURCE_PATH);    pjt_map1_path += "kass-3.jpg";  //"sx-logo-white.jpg";
+    int tex1_cols, tex1_rows, tex1_chan;
+    unsigned int pjt_map1 = load_texture_clamp_boarder(pjt_map1_path.c_str(), tex1_cols, tex1_rows, tex1_chan);
+    std::cout << "projector texture1 size: " << tex1_cols << ", " << tex1_rows << ", " << tex1_chan << std::endl;
+
+    std::string pjt_map2_path(RESOURCE_PATH);    pjt_map2_path += "kass-0.jpg";
+    int tex2_cols, tex2_rows, tex2_chan;
+    unsigned int pjt_map2 = load_texture_clamp_boarder(pjt_map2_path.c_str(), tex2_cols, tex2_rows, tex2_chan);
+    std::cout << "projector texture2 size: " << tex2_cols << ", " << tex2_rows << ", " << tex2_chan << std::endl;
 
     
     const float aspect_ratio = static_cast<float>(SCR_WIDTH) / static_cast<float>(SCR_HEIGHT);
     const float pjt_fov = glm::radians(20.f);
-    const float pjt_ar = static_cast<float>(tex_cols) / static_cast<float>(tex_rows);   //projector aspect ratio
+    const float pjt_ar = static_cast<float>(tex1_cols) / static_cast<float>(tex1_rows);   //projector aspect ratio
     const float pjt_near = 0.1f;
     const float pjt_far = 50.f;
     glm::mat4 pjt_proj = glm::perspective( pjt_fov, pjt_ar, pjt_near, pjt_far);
@@ -329,14 +333,15 @@ int main()
 
     // projector setting for test
     {
-        pjt1.ProcessMouseMovement(0, 150);
-        pjt2.ProcessMouseMovement(0, 150);
+        pjt1.ProcessMouseMovement(0, 250);
+        pjt2.ProcessMouseMovement(0, 250);
         pjt2.rotateYaw(-60.f);
     }
 
     bowl_shader.use();
     //fragment shader
-    bowl_shader.setInt  ("pjtTexture"    , 0);
+    bowl_shader.setInt  ("pjtTexture0"   , 0);
+    bowl_shader.setInt  ("pjtTexture1"   , 1);
     bowl_shader.setFloat("pjtFOV"        , pjt_fov);
     bowl_shader.setVec3 ("pjtPos1"       , pjt1.Position);
     bowl_shader.setVec3 ("pjtFront1"     , pjt1.Front);
@@ -396,7 +401,9 @@ int main()
 
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pjt_map);
+        glBindTexture(GL_TEXTURE_2D, pjt_map1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pjt_map2);
 
         // view, projection transformations
         glm::mat4 cam_proj = glm::perspective(
@@ -488,16 +495,16 @@ int main()
         glDrawElements(GL_TRIANGLES, vec_indice.size(), GL_UNSIGNED_INT, 0);
 
         
-        // frustum_shader.use();
-        // glBindVertexArray(frustumVAO);
-        // frustum_shader.setMat4("cam_proj", cam_proj);
-        // frustum_shader.setMat4("cam_view", cam_view);
-        // frustum_shader.setMat4("pjt_proj", pjt_proj);
-        // frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
-        // glLineWidth(2.0f);
-        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-        // frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        frustum_shader.use();
+        glBindVertexArray(frustumVAO);
+        frustum_shader.setMat4("cam_proj", cam_proj);
+        frustum_shader.setMat4("cam_view", cam_view);
+        frustum_shader.setMat4("pjt_proj", pjt_proj);
+        frustum_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
+        glLineWidth(2.0f);
+        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        frustum_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
