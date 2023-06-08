@@ -89,6 +89,7 @@ void main()
         result = (1.f - texture(pjtTexture, uv2));
     }
 
+    //case of overlapped region
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
         1.0 >= uv1.y && uv1.y >= 0. &&
         1.0 >= uv2.x && uv2.x >= 0. &&
@@ -98,59 +99,92 @@ void main()
         float denominator = length(pjtBlendPlane.norm);
         float dist = numerator / denominator;
         float dist_abs = abs(dist);
-        float dist_blend = dist / BLEND_WIDTH;
-        float sigma = 0.23;
-        float sigma_sqr = sigma * sigma;
-        float sigma_max_val = 1 / (sqrt(2 * PI)*sigma);
-        bool use_gaussian = true;
+        float dist_blend = dist_abs / BLEND_WIDTH;
 
         vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
         vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
-        if(0.f > dist)  //left side
+
+        if(true)
         {
-            if(dist_abs > BLEND_WIDTH)
-                result = tex1_intensity;
-            else
+            //linear blending
+            float w = 0.f;
+            if( 1.f > dist_blend)
             {
-                float w = 0.f;
-                if(!use_gaussian)
-                    w = abs(dist_blend) / 2.f;
-                else
-                {
-                    w = 1 / (sqrt(2 * PI)*sigma);
-                    w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
-
-                    w /= sigma_max_val;
-                    w /= 2.f;
-                    w = 1.f - w;
-                }
-
-                result = tex1_intensity * w + tex2_intensity * (1.f - w);
+                w = 1.f - dist_blend;
+                w /= 2.f;
             }
+
+            if( 0.f > dist )
+                result = tex1_intensity * (1.f - w) + tex2_intensity * w;
+            else
+                result = tex2_intensity * (1.f - w) + tex1_intensity * w;
         }
-        else    //right side
+        else
         {
-            if(dist_abs > BLEND_WIDTH)
-                result = tex2_intensity;
-            else
-            {
-                float w = 0.f;
-                if(!use_gaussian)
-                    w = abs(dist_blend) / 2.f;
-                else
-                {
-                    w = 1 / (sqrt(2 * PI)*sigma);
-                    w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
-                    
-                    w /= sigma_max_val;
-                    w /= 2.f;
-                    w = 1.f - w;
-                }
+            //gaussian blending
 
-                result = tex2_intensity * w + tex1_intensity * (1.f - w);
-            }
         }
-
+        // float numerator = dot(pjtBlendPlane.norm, frag_pos) + pjtBlendPlane.d;
+        // float denominator = length(pjtBlendPlane.norm);
+        // float dist = numerator / denominator;
+        // float dist_abs = abs(dist);
+        // float dist_blend = dist / BLEND_WIDTH;
+        // float sigma = 0.27;
+        // float sigma_sqr = sigma * sigma;
+        // float sigma_max_val = 1 / (sqrt(2 * PI)*sigma);
+        // bool use_gaussian = true;
+        //
+        // vec4 tex1_intensity = textureProj(pjtTexture, pjtTexCoord1);
+        // vec4 tex2_intensity = 1.f - textureProj(pjtTexture, pjtTexCoord2);
+        // if(0.f > dist)  //left side
+        // {
+        //     if(dist_abs > BLEND_WIDTH)
+        //         result = tex1_intensity;
+        //     else
+        //     {
+        //         float w = 0.f;
+        //         if(!use_gaussian)
+        //             w = abs(dist_blend) / 2.f;
+        //         else
+        //         {
+        //             w = 1 / (sqrt(2 * PI)*sigma);
+        //             w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
+        //
+        //             w /= sigma_max_val;
+        //             w /= 2.f;
+        //         }
+        //
+        //         // result = tex1_intensity * (1.f - w) + tex2_intensity * w;
+        //         // result = tex1_intensity * w + tex2_intensity * (1.f - w);
+        //         // result = tex1_intensity;
+        //      
+        //         // result = tex2_intensity * (1.f - w) + tex1_intensity * w;
+        //         result = tex1_intensity * (1.f - w) + tex2_intensity * w;
+        //     }
+        // }
+        // else    //right side
+        // {
+        //     if(dist_abs > BLEND_WIDTH)
+        //         result = tex2_intensity;
+        //     else
+        //     {
+        //         float w = 0.f;
+        //         if(!use_gaussian)
+        //             w = abs(dist_blend) / 2.f;
+        //         else
+        //         {
+        //             w = 1 / (sqrt(2 * PI)*sigma);
+        //             w *= exp( -dist_blend*dist_blend / (2 * sigma_sqr));
+        //          
+        //             w /= sigma_max_val;
+        //             w /= 2.f;
+        //         }
+        //
+        //         // result = tex2_intensity * (1.f - w) + tex1_intensity * w;
+        //         // result = tex2_intensity * w + tex1_intensity * (1.f - w);
+        //         result = tex1_intensity * w + tex2_intensity * (1.f - w);
+        //     }
+        // }
     }
 
     // for(int c = 0; c < NR_PLANES; c++)
