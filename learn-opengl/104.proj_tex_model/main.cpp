@@ -487,6 +487,39 @@ int main()
         frustum_shader_.setMat4("pjt_view", pjt1.GetViewMatrix());
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+        GLenum glErr;
+    int    retCode = 0;
+
+    glErr = glGetError();
+    while (glErr != GL_NO_ERROR)
+    {
+		const char * message = "";
+		switch( glErr )
+		{
+		case GL_INVALID_ENUM:
+			message = "Invalid enum";
+			break;
+		case GL_INVALID_VALUE:
+			message = "Invalid value";
+			break;
+		case GL_INVALID_OPERATION:
+			message = "Invalid operation";
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			message = "Invalid framebuffer operation";
+			break;
+		case GL_OUT_OF_MEMORY:
+			message = "Out of memory";
+			break;
+		default:
+			message = "Unknown error";
+		}
+
+        printf("glError in file %s @ line %d: %s\n", "main", 0, message);
+        retCode = 1;
+        glErr = glGetError();
+    }
+
         frustum_shader_.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 

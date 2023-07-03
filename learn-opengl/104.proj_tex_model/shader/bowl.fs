@@ -105,7 +105,7 @@ void main()
         vec4 tex1_intensity = textureProj(pjtTexture0, pjtTexCoord1);
         vec4 tex2_intensity = 1.0 - textureProj(pjtTexture1, pjtTexCoord2);
 
-        if(false)
+        if(true)
         {
             //linear blending
             float w = 0.f;

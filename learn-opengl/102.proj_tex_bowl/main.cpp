@@ -194,6 +194,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "bowl texture projection test", NULL, NULL);
     if(window == NULL)
@@ -210,6 +211,7 @@ int main()
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initailize GLAD" << std::endl;
@@ -217,6 +219,7 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
     glfwSwapInterval(1);
 
     std::string bowl_shader_vs_path(BASE_PATH);     bowl_shader_vs_path += "102.proj_tex_bowl/shader/bowl.vs";
@@ -233,7 +236,7 @@ int main()
             for(auto vert : mesh.vertices)
             {
                 vert_info vi;
-                vi.pos  = vert.Position * 2.f;
+                vi.pos  = vert.Position * 1.5f;
                 vi.norm = vert.Normal;
                 vi.uv.x = 0.f;
                 vi.uv.y = 0.f;
@@ -305,12 +308,14 @@ int main()
     };
 
     stbi_set_flip_vertically_on_load(true);
-    std::string pjt_map1_path(RESOURCE_PATH);    pjt_map1_path += "kass-3.jpg";  //"sx-logo-white.jpg";
+    // std::string pjt_map1_path(RESOURCE_PATH);    pjt_map1_path += "kass-3.jpg";
+    std::string pjt_map1_path(RESOURCE_PATH);    pjt_map1_path += "sx-logo-white.jpg";
     int tex1_cols, tex1_rows, tex1_chan;
     unsigned int pjt_map1 = load_texture_clamp_boarder(pjt_map1_path.c_str(), tex1_cols, tex1_rows, tex1_chan);
     std::cout << "projector texture1 size: " << tex1_cols << ", " << tex1_rows << ", " << tex1_chan << std::endl;
 
-    std::string pjt_map2_path(RESOURCE_PATH);    pjt_map2_path += "kass-0.jpg";
+    // std::string pjt_map2_path(RESOURCE_PATH);    pjt_map2_path += "kass-0.jpg";
+    std::string pjt_map2_path(RESOURCE_PATH);    pjt_map2_path += "sx-logo-white.jpg";
     int tex2_cols, tex2_rows, tex2_chan;
     unsigned int pjt_map2 = load_texture_clamp_boarder(pjt_map2_path.c_str(), tex2_cols, tex2_rows, tex2_chan);
     std::cout << "projector texture2 size: " << tex2_cols << ", " << tex2_rows << ", " << tex2_chan << std::endl;
@@ -333,8 +338,8 @@ int main()
 
     // projector setting for test
     {
-        pjt1.ProcessMouseMovement(0, 250);
-        pjt2.ProcessMouseMovement(0, 250);
+        pjt1.ProcessMouseMovement(0, 150);
+        pjt2.ProcessMouseMovement(0, 150);
         pjt2.rotateYaw(-60.f);
     }
 
@@ -388,22 +393,36 @@ int main()
     frustum_shader.setMat4("pjt_proj", pjt_proj);
     frustum_shader.setBool("direct_test", direct_test);
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, pjt_map1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, pjt_map2);
+
+    float delta_sum = 0.f;
+    int frame_cnt = 0;
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
         delta_time = current_frame - last_frame;
         last_frame = current_frame;
 
+        if(delta_sum >= 1.0f)
+        {
+            std::cout << "fps: " << frame_cnt << std::endl;
+            delta_sum = 0.f;
+            frame_cnt = 0;
+        }
+        else
+        {
+            delta_sum += delta_time;
+            frame_cnt++;
+        }
+
         process_input(window);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, pjt_map1);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, pjt_map2);
 
         // view, projection transformations
         glm::mat4 cam_proj = glm::perspective(
