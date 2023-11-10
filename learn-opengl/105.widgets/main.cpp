@@ -189,6 +189,29 @@ std::vector<Plane> calc_side_planes(const std::vector<glm::vec4>& pts)
     return rv;
 }
 
+glm::mat4 rotationMatrixFromVectors(glm::vec3 a, glm::vec3 b)
+{
+    float cosTheta = glm::dot(a, b); // Cosine of the angle
+    glm::vec3 rotationAxis = glm::cross(a, b); // Rotation axis
+
+    if (glm::length(rotationAxis) < 1e-6)
+    {
+        // Vectors are parallel
+        rotationAxis = glm::vec3(1.0, 0.0, 0.0); // Default axis if cross product is zero
+    }
+    else
+    {
+        rotationAxis = glm::normalize(rotationAxis); // Normalize the axis
+    }
+
+    float angle = acos(cosTheta); // Angle in radians
+
+    // Create a rotation matrix around rotation axis by the angle
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, rotationAxis);
+
+    return rotationMatrix;
+}
+
 int main()
 {
     glfwInit();
@@ -287,8 +310,8 @@ int main()
     };
 
     std::vector<glm::vec4> vec_line_ndc_pt = {
-        { 0.25f, 0.5f, 0.0f, 1.0f },
-        { 0.75f, 0.5f, 0.0f, 1.0f }
+        { -0.25f, 0.0f, 0.0f, 1.0f },
+        {  0.25f, 0.0f, 0.0f, 1.0f }
     };
     std::vector<unsigned int> vec_line_idx = { 0, 1};
 
@@ -516,7 +539,7 @@ int main()
             bowl_shader_.setVec3("pjtBlendPlane.norm", blend_plane.norm);
             bowl_shader_.setFloat("pjtBlendPlane.d", blend_plane.d);
         }
-        model_obj.Draw(bowl_shader_);
+        // model_obj.Draw(bowl_shader_);
 
         frustum_shader_.use();
         glBindVertexArray(frustumVAO);
@@ -561,6 +584,9 @@ int main()
 
         frustum_shader_.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
+
+        glm::mat4 rm = rotationMatrixFromVectors(cam.Front, pjt1.Front);
+        glm::vec3 tm_ = pjt1.Position - cam.Position;
 
         line_shader.use();
         glBindVertexArray(lineVAO);

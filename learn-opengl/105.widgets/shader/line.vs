@@ -9,13 +9,16 @@ uniform mat4 cam_view;
 uniform mat4 pjt_proj;
 uniform mat4 pjt_view;
 
+uniform mat4 rmat;
+uniform vec4 tmat;
+
 bool direct_test;
 
 void main()
 {
-    // vec4 ndc_pt = vec4(aPos, 1.0);
     vec4 ndc_pt = aPos;
     mat4 inv = inverse(pjt_proj * pjt_view);
+    // mat4 inv = inverse(cam_proj * cam_view);
 
     vec4 world_pos = inv * ndc_pt;
 
