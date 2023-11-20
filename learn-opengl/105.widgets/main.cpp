@@ -762,8 +762,8 @@ int main()
         // line draw function
         {
             std::vector<glm::vec4> vec_line_simple_pt = {
-                {-100.f, 0.0f, 0.0f, 1.0f},
-                { 100.f, 0.0f, 0.0f, 1.0f}
+                {-2.f, 0.0f, 0.0f, 1.0f},
+                { 2.f, 0.0f, 0.0f, 1.0f}
             };
             std::vector<unsigned int> vec_line_simple_idx = {0, 1};
 
@@ -783,7 +783,7 @@ int main()
             line_simple_shader.setMat4("cam_proj", cam_proj);
             line_simple_shader.setMat4("cam_view", cam_view);
             glBindVertexArray(lineSimpleVAO);
-            glLineWidth(2.0f);
+            glLineWidth(3.0f);
             glDrawElements(GL_LINES, vec_line_idx.size(), GL_UNSIGNED_INT, 0);
         }
 
