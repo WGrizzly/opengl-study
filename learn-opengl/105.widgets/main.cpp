@@ -762,9 +762,13 @@ int main()
         // line draw function
         {
             std::vector<glm::vec4> vec_line_simple_pt = {
-                {-2.f, 0.0f, 0.0f, 1.0f},
-                { 2.f, 0.0f, 0.0f, 1.0f}
+                {sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f},
+                { 2.f, sin(glfwGetTime()) * 2.f, 0.0f, 1.0f}
+                // {sin(glfwGetTime() / 2.f) * 1.f, 0.0f, 0.0f, 1.0f}
+                // {-2.f, 0.0f, 0.0f, 1.0f},
+                // { 2.f, 0.0f, 0.0f, 1.0f}
             };
+
             std::vector<unsigned int> vec_line_simple_idx = {0, 1};
 
             glBindVertexArray(lineSimpleVAO);
