@@ -9,10 +9,7 @@ uniform mat4 cam_view;
 uniform mat4 pjt_proj;
 uniform mat4 pjt_view;
 
-uniform mat4 rmat;
-uniform vec4 tmat;
-
-bool direct_test;
+uniform mat4 hm;
 
 void main()
 {
@@ -22,6 +19,9 @@ void main()
 
     vec4 world_pos = inv * ndc_pt;
 
+    vec4 transformed_pos = hm * world_pos;
+
+    // gl_Position = cam_proj * cam_view * transformed_pos;
     gl_Position = cam_proj * cam_view * world_pos;
     // gl_Position = cam_proj * cam_view * aPos;
 }

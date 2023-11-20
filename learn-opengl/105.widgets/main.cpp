@@ -14,9 +14,32 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <unordered_map>
+
+#include <chrono>
+#include <vtkKdTree.h>
+#include <vtkOBBTree.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkSTLReader.h>
+#include <vtkCellArray.h>
+#include <vtkIdList.h>
+#include <vtkAutoInit.h>
+#include <vtkNew.h>
+VTK_MODULE_INIT(vtkRenderingOpenGL2)
+VTK_MODULE_INIT(vtkRenderingFreeType)
+VTK_MODULE_INIT(vtkInteractionStyle)
+
 
 #include "../includes/self_defines.hpp"
 #include "../includes/sx_simple_shader.hpp"
+
+#ifndef CHRONO_NOW_HRES
+	#define CHRONO_NOW_HRES std::chrono::high_resolution_clock::now()
+#endif
+#ifndef CHRONO_ELAPSED_MSEC
+	#define CHRONO_ELAPSED_MSEC(a, b) std::chrono::duration_cast<std::chrono::milliseconds>(b - a).count()
+#endif
 
 using namespace std;
 
@@ -212,6 +235,55 @@ glm::mat4 rotationMatrixFromVectors(glm::vec3 a, glm::vec3 b)
     return rotationMatrix;
 }
 
+glm::mat4 get_rmat(glm::vec3 from, glm::vec3 to)
+{
+    from = glm::normalize(from);
+    to = glm::normalize(to);
+
+    glm::vec3 axis = glm::cross(from, to);
+
+    float angle = acos(glm::dot(from, to));
+
+    glm::mat4 rmat = glm::rotate(glm::mat4(1.0f), angle, axis);
+    return rmat;
+}
+
+bool plane_ray_intersect(glm::vec3& contact, glm::vec3 ray, glm::vec3 ray_org, vtkPoints* points)
+{
+    if (points->GetNumberOfPoints() < 3)
+    {
+        return false; // Not enough points to define a plane
+    }
+
+    // Extract three points from vtkPoints to define the plane
+    double p0[3], p1[3], p2[3];
+    points->GetPoint(0, p0);
+    points->GetPoint(1, p1);
+    points->GetPoint(2, p2);
+
+    // Compute plane normal
+    glm::vec3 a(p0[0], p0[1], p0[2]);
+    glm::vec3 b(p1[0], p1[1], p1[2]);
+    glm::vec3 c(p2[0], p2[1], p2[2]);
+    glm::vec3 plane_normal = glm::normalize(glm::cross(b - a, c - a));
+
+    // Plane equation: Ax + By + Cz + D = 0; D can be computed as -dot(plane_normal, a)
+    float D = -glm::dot(plane_normal, a);
+
+    // Check if the ray and plane are parallel
+    float denom = glm::dot(plane_normal, ray);
+    if (0.1e-06 > std::fabs(denom - 0.0f))
+    {
+        return false; // No intersection, the line is parallel to the plane
+    }
+
+    // Compute intersection
+    float x = -(glm::dot(plane_normal, ray_org) + D) / denom;
+    contact = ray_org + glm::normalize(ray) * x;
+
+    return true;
+}
+
 int main()
 {
     glfwInit();
@@ -247,6 +319,28 @@ int main()
     glfwSwapInterval(1);
 
     Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+
+    vtkNew<vtkOBBTree> obb_tree;
+    vtkNew<vtkKdTree> kd_tree;
+    vtkNew<vtkCellArray> cell_list;
+    vtkNew<vtkPolyData> poly;
+    {
+        vtkNew<vtkSTLReader> reader;
+        reader->SetFileName("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+        reader->Update();
+
+        poly->DeepCopy(reader->GetOutput());
+        std::cout << "# of pts: " << poly->GetNumberOfPoints() << std::endl;
+
+        obb_tree->SetDataSet(poly);
+        obb_tree->BuildLocator();
+        obb_tree->Update();
+
+        kd_tree->BuildLocatorFromPoints(poly->GetPoints());
+    }
+
+    
+    
 
     std::string bowl_shader_vs_path(BASE_PATH);     bowl_shader_vs_path += "105.widgets/shader/bowl.vs";
     std::string bowl_shader_fs_path(BASE_PATH);     bowl_shader_fs_path += "105.widgets/shader/bowl.fs";
@@ -284,11 +378,11 @@ int main()
         {  1.0f,  1.0f, -0.0f, 1.0f },    // NTR
         { -1.0f,  1.0f, -0.0f, 1.0f }     // NTL
     };
-    for(auto& pt : vec_frustum_ndc_pt)//for testing
-    {
-        pt[0] /= 2.;
-        pt[1] /= 2.;
-    }
+    // for(auto& pt : vec_frustum_ndc_pt)//for testing
+    // {
+    //     pt[0] /= 2.;
+    //     pt[1] /= 2.;
+    // }
     std::vector<unsigned int> vec_frustum_idx = {
         //near plane
         0, 1,
@@ -351,6 +445,36 @@ int main()
         pjt2.ProcessMouseMovement(0, 150);
         pjt2.rotateYaw(-60.f);
     }
+
+    // 프로젝터가 움직이지 않는다고 가정했을때만 사용
+    //                                  vtkIdType for point id in poly
+    std::map<double, std::map<double, glm::vec3>> pjtn_map;
+    {
+        //initialize map
+        
+        glm::mat4 transform_mat = bias_mat * pjt_proj * pjt1.GetViewMatrix() * glm::mat4(1.0f);
+
+        for(vtkIdType pt_id = 0; pt_id < poly->GetNumberOfPoints(); pt_id++)
+        {
+            double *pt = poly->GetPoint(pt_id);
+            glm::vec3 gl_pt;
+            gl_pt[0] = static_cast<float>(pt[0]);
+            gl_pt[1] = static_cast<float>(pt[1]);
+            gl_pt[2] = static_cast<float>(pt[2]);
+
+            glm::vec4 uv = transform_mat * glm::vec4(gl_pt, 1.0);
+            uv[0] /= uv[3];
+            uv[1] /= uv[3];
+            uv[2] /= uv[3];
+            uv[3] /= uv[3];
+
+            if(1.0 > uv[0] && uv[0] >= 0.0)
+            {
+
+            }
+        }
+    }
+
 
     bowl_shader_.use();
     //fragment shader
@@ -539,7 +663,7 @@ int main()
             bowl_shader_.setVec3("pjtBlendPlane.norm", blend_plane.norm);
             bowl_shader_.setFloat("pjtBlendPlane.d", blend_plane.d);
         }
-        // model_obj.Draw(bowl_shader_);
+        model_obj.Draw(bowl_shader_);
 
         frustum_shader_.use();
         glBindVertexArray(frustumVAO);
@@ -585,15 +709,107 @@ int main()
         frustum_shader_.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
-        glm::mat4 rm = rotationMatrixFromVectors(cam.Front, pjt1.Front);
-        glm::vec3 tm_ = pjt1.Position - cam.Position;
+        glm::mat4 hm = glm::inverse(cam.GetViewMatrix()) * pjt2.GetViewMatrix();
+
+        {
+            auto _tp1 = CHRONO_NOW_HRES;
+
+            for (int c = 100; c < 100; c++)
+            {
+                glm::vec3 gl_pt_start = pjt2.Position;
+                glm::vec3 gl_pt_end = pjt2.Position + pjt2.Front * 1000.f;
+                double ray_start[3] = {gl_pt_start[0], gl_pt_start[1], gl_pt_start[2]};
+                double ray_end[3] = {gl_pt_end[0], gl_pt_end[1], gl_pt_end[2]};
+
+                // intersection test
+                vtkNew<vtkPoints> intersection_pts;
+                obb_tree->IntersectWithLine(ray_start, ray_end, intersection_pts, nullptr);
+
+                double inter_pt1[3];
+                intersection_pts->GetPoint(0, inter_pt1);
+
+                gl_pt_start = pjt1.Position;
+                gl_pt_end = pjt1.Position + pjt1.Front * 1000.f;
+                ray_start[0] = gl_pt_start[0];
+                ray_start[1] = gl_pt_start[1];
+                ray_start[2] = gl_pt_start[2];
+                ray_end[0] = gl_pt_end[0];
+                ray_end[1] = gl_pt_end[1];
+                ray_end[2] = gl_pt_end[2];
+
+                double inter_pt2[3];
+                obb_tree->IntersectWithLine(ray_start, ray_end, intersection_pts, nullptr);
+                intersection_pts->GetPoint(0, inter_pt2);
+            }
+
+            for(int c = 0; c < 1000; c++)
+            {
+                double search_pt[3] = {1.1, 2.2, 3.3};
+                double dist = 0.f;
+
+                vtkIdType id = kd_tree->FindClosestPoint(search_pt, dist);
+
+                vtkNew<vtkIdList> cell_id_list;
+                poly->GetPointCells(id, cell_id_list);
+                // std::cout << "# of cells:" << cell_id_list->GetNumberOfIds() << std::endl;
+
+                double ray1_start[3], ray1_end[3];
+                glm::vec3 gl_pt_start = pjt2.Position;
+                glm::vec3 gl_pt_end = pjt2.Position + pjt2.Front * 1000.f;
+                {
+                    ray1_start[0] = gl_pt_start[0];
+                    ray1_start[1] = gl_pt_start[1];
+                    ray1_start[2] = gl_pt_start[2];
+
+                    ray1_end[0] = gl_pt_end[0];
+                    ray1_end[1] = gl_pt_end[1];
+                    ray1_end[2] = gl_pt_end[2];
+                }
+
+                for(vtkIdType i = 0; i < cell_id_list->GetNumberOfIds(); i++)
+                {
+                    vtkIdType cell_id = cell_id_list->GetId(i);
+                    vtkSmartPointer<vtkCell> cell = poly->GetCell(cell_id);
+                    vtkSmartPointer<vtkPoints> pts = cell->GetPoints();
+
+                    glm::vec3 contact;
+                    if(plane_ray_intersect(contact, pjt2.Position, pjt2.Front, pts))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            auto _tp2 = CHRONO_NOW_HRES;
+            // std::cout << "tree searching time: " << CHRONO_ELAPSED_MSEC(_tp1, _tp2) << std::endl;
+
+            if(false)
+            {
+                glGenVertexArrays(1, &lineVAO);
+                glGenBuffers(1, &lineVBO);
+                glGenBuffers(1, &lineEBO);
+
+                glBindVertexArray(lineVAO);
+                glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_ndc_pt.size(), &vec_line_ndc_pt.front(), GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineEBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_line_idx.size(), &vec_line_idx.front(), GL_STATIC_DRAW);
+
+                glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+                glEnableVertexAttribArray(0);
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glBindVertexArray(0);
+            }
+        }
 
         line_shader.use();
         glBindVertexArray(lineVAO);
         line_shader.setMat4("cam_proj", cam_proj);
         line_shader.setMat4("cam_view", cam_view);
         line_shader.setMat4("pjt_proj", pjt_proj);
-        line_shader.setMat4("pjt_view", pjt1.GetViewMatrix());
+        line_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        line_shader.setMat4("hm", hm);
         glLineWidth(2.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
