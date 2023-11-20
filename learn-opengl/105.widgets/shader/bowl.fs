@@ -143,6 +143,21 @@ void main()
         }
     }
 
-
+    // for(int c = 0; c < NR_PLANES; c++)
+    // {
+    //     if(pointIsOnPlane(pjtFrustumPlanes[c], frag_pos))
+    //     {
+    //         result = vec4(.0, .0, 1.0, 0.0);
+    //         break;
+    //     }
+    // }
+    //
+    // if(pointIsOnPlane(pjtBlendPlane, frag_pos))
+    //     result = vec4(1.0, .0, .0, 0.0);
+    // if(0.015f > getDistance(frag_pos, up_line.point, up_line.direction))
+    //     result = vec4(1.0, 0.0, 1.0, 0.0);
+    // if(0.015f > getDistance(frag_pos, down_line.point, down_line.direction))
+    //     result = vec4(0.0, 1.0, 1.0, 0.0);
+        
     FragColor = result;
 }

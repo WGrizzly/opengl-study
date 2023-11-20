@@ -365,6 +365,13 @@ int main()
     line_shader.compile_shader(line_shader_vs_path);
     line_shader.compile_shader(line_shader_fs_path);
     line_shader.link();
+
+    std::string line_simple_shader_vs_path(BASE_PATH);    line_simple_shader_vs_path += "105.widgets/shader/line-simple.vs";
+    std::string line_simple_shader_fs_path(BASE_PATH);    line_simple_shader_fs_path += "105.widgets/shader/line-simple.fs";
+    sx_simple_shader line_simple_shader;
+    line_simple_shader.compile_shader(line_simple_shader_vs_path);
+    line_simple_shader.compile_shader(line_simple_shader_fs_path);
+    line_simple_shader.link();
     
     
 
@@ -407,7 +414,9 @@ int main()
         { -0.25f, 0.0f, 0.0f, 1.0f },
         {  0.25f, 0.0f, 0.0f, 1.0f }
     };
-    std::vector<unsigned int> vec_line_idx = { 0, 1};
+    std::vector<unsigned int> vec_line_idx = { 0, 1 };
+
+    
 
     stbi_set_flip_vertically_on_load(true);
     // std::string pjt_map1_path(RESOURCE_PATH);    pjt_map1_path += "kass-3.jpg";
@@ -448,31 +457,55 @@ int main()
 
     // 프로젝터가 움직이지 않는다고 가정했을때만 사용
     //                                  vtkIdType for point id in poly
-    std::map<double, std::map<double, glm::vec3>> pjtn_map;
+    std::vector<std::vector<glm::vec4>> proj_map;
     {
         //initialize map
-        
-        glm::mat4 transform_mat = bias_mat * pjt_proj * pjt1.GetViewMatrix() * glm::mat4(1.0f);
-
-        for(vtkIdType pt_id = 0; pt_id < poly->GetNumberOfPoints(); pt_id++)
+        proj_map.reserve(tex1_rows);
+        for(int y = 0; y < tex1_rows; y++)
         {
-            double *pt = poly->GetPoint(pt_id);
-            glm::vec3 gl_pt;
-            gl_pt[0] = static_cast<float>(pt[0]);
-            gl_pt[1] = static_cast<float>(pt[1]);
-            gl_pt[2] = static_cast<float>(pt[2]);
+            std::vector<glm::vec4> vec_list;
+            // vec_list.reserve(tex1_cols);
+            for(int x = 0; x < tex1_cols; x++)
+                vec_list.push_back(glm::vec4(0., 0., 0., 0.));
+            proj_map.push_back(vec_list);
+        }
 
-            glm::vec4 uv = transform_mat * glm::vec4(gl_pt, 1.0);
-            uv[0] /= uv[3];
-            uv[1] /= uv[3];
-            uv[2] /= uv[3];
-            uv[3] /= uv[3];
-
-            if(1.0 > uv[0] && uv[0] >= 0.0)
+        const int half_rows = tex1_rows / 2;
+        const int half_cols = tex1_cols / 2;
+        for(int y = 0; y < tex1_rows; y++)
+        {
+            for(int x = 0; x < tex1_cols; x++)
             {
+                double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
+                double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
 
+                glm::vec4 ndc_npt = { u, v, 0., 1. };
+                glm::vec4 ndc_fpt = { u, v, 1., 1. };
+
+                glm::vec4 world_npt = ndc_npt * glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+                glm::vec4 world_fpt = ndc_fpt * glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+
+                double world_npt_dbl[3] = { world_npt[0], world_npt[1], world_npt[2] };
+                double world_fpt_dbl[3] = { world_fpt[0], world_fpt[1], world_fpt[2] };
+
+                vtkNew<vtkPoints> inter_pts;
+                obb_tree->IntersectWithLine(world_npt_dbl, world_fpt_dbl, inter_pts, nullptr);
+
+                if(0 >= inter_pts->GetNumberOfPoints() )    continue;
+
+                double inter_pt[3];
+                inter_pts->GetPoint(0, inter_pt);
+
+                glm::vec3 glm_inter_pt = {  inter_pt[0], inter_pt[1], inter_pt[2]   };
+                proj_map[y].push_back(glm::vec4(
+                    inter_pt[0],
+                    inter_pt[1],
+                    inter_pt[2],
+                    0.
+                ));
             }
         }
+
     }
 
 
@@ -546,6 +579,14 @@ int main()
     }
     line_shader.use();
     line_shader.setMat4("pjt_proj", pjt_proj);
+
+    unsigned int lineSimpleVAO, lineSimpleVBO, lineSimpleEBO;
+    {
+        glGenVertexArrays(1, &lineSimpleVAO);
+        glGenBuffers(1, &lineSimpleVBO);
+        glGenBuffers(1, &lineSimpleEBO);        
+    }
+    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pjt_map1);
@@ -663,7 +704,7 @@ int main()
             bowl_shader_.setVec3("pjtBlendPlane.norm", blend_plane.norm);
             bowl_shader_.setFloat("pjtBlendPlane.d", blend_plane.d);
         }
-        model_obj.Draw(bowl_shader_);
+        //model_obj.Draw(bowl_shader_);
 
         frustum_shader_.use();
         glBindVertexArray(frustumVAO);
@@ -709,113 +750,54 @@ int main()
         frustum_shader_.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
-        glm::mat4 hm = glm::inverse(cam.GetViewMatrix()) * pjt2.GetViewMatrix();
+        // line_shader.use();
+        // glBindVertexArray(lineVAO);
+        // line_shader.setMat4("cam_proj", cam_proj);
+        // line_shader.setMat4("cam_view", cam_view);
+        // line_shader.setMat4("pjt_proj", pjt_proj);
+        // line_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
+        // glLineWidth(2.0f);
+        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
+        // line draw function
         {
-            auto _tp1 = CHRONO_NOW_HRES;
+            std::vector<glm::vec4> vec_line_simple_pt = {
+                {-100.f, 0.0f, 0.0f, 1.0f},
+                { 100.f, 0.0f, 0.0f, 1.0f}
+            };
+            std::vector<unsigned int> vec_line_simple_idx = {0, 1};
 
-            for (int c = 100; c < 100; c++)
-            {
-                glm::vec3 gl_pt_start = pjt2.Position;
-                glm::vec3 gl_pt_end = pjt2.Position + pjt2.Front * 1000.f;
-                double ray_start[3] = {gl_pt_start[0], gl_pt_start[1], gl_pt_start[2]};
-                double ray_end[3] = {gl_pt_end[0], gl_pt_end[1], gl_pt_end[2]};
+            glBindVertexArray(lineSimpleVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, lineSimpleVBO);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_simple_pt.size(), &vec_line_simple_pt.front(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineSimpleEBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_line_simple_idx.size(), &vec_line_simple_idx.front(), GL_STATIC_DRAW);
 
-                // intersection test
-                vtkNew<vtkPoints> intersection_pts;
-                obb_tree->IntersectWithLine(ray_start, ray_end, intersection_pts, nullptr);
+            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+            glEnableVertexAttribArray(0);
 
-                double inter_pt1[3];
-                intersection_pts->GetPoint(0, inter_pt1);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
 
-                gl_pt_start = pjt1.Position;
-                gl_pt_end = pjt1.Position + pjt1.Front * 1000.f;
-                ray_start[0] = gl_pt_start[0];
-                ray_start[1] = gl_pt_start[1];
-                ray_start[2] = gl_pt_start[2];
-                ray_end[0] = gl_pt_end[0];
-                ray_end[1] = gl_pt_end[1];
-                ray_end[2] = gl_pt_end[2];
-
-                double inter_pt2[3];
-                obb_tree->IntersectWithLine(ray_start, ray_end, intersection_pts, nullptr);
-                intersection_pts->GetPoint(0, inter_pt2);
-            }
-
-            for(int c = 0; c < 1000; c++)
-            {
-                double search_pt[3] = {1.1, 2.2, 3.3};
-                double dist = 0.f;
-
-                vtkIdType id = kd_tree->FindClosestPoint(search_pt, dist);
-
-                vtkNew<vtkIdList> cell_id_list;
-                poly->GetPointCells(id, cell_id_list);
-                // std::cout << "# of cells:" << cell_id_list->GetNumberOfIds() << std::endl;
-
-                double ray1_start[3], ray1_end[3];
-                glm::vec3 gl_pt_start = pjt2.Position;
-                glm::vec3 gl_pt_end = pjt2.Position + pjt2.Front * 1000.f;
-                {
-                    ray1_start[0] = gl_pt_start[0];
-                    ray1_start[1] = gl_pt_start[1];
-                    ray1_start[2] = gl_pt_start[2];
-
-                    ray1_end[0] = gl_pt_end[0];
-                    ray1_end[1] = gl_pt_end[1];
-                    ray1_end[2] = gl_pt_end[2];
-                }
-
-                for(vtkIdType i = 0; i < cell_id_list->GetNumberOfIds(); i++)
-                {
-                    vtkIdType cell_id = cell_id_list->GetId(i);
-                    vtkSmartPointer<vtkCell> cell = poly->GetCell(cell_id);
-                    vtkSmartPointer<vtkPoints> pts = cell->GetPoints();
-
-                    glm::vec3 contact;
-                    if(plane_ray_intersect(contact, pjt2.Position, pjt2.Front, pts))
-                    {
-                        break;
-                    }
-                }
-            }
-
-            auto _tp2 = CHRONO_NOW_HRES;
-            // std::cout << "tree searching time: " << CHRONO_ELAPSED_MSEC(_tp1, _tp2) << std::endl;
-
-            if(false)
-            {
-                glGenVertexArrays(1, &lineVAO);
-                glGenBuffers(1, &lineVBO);
-                glGenBuffers(1, &lineEBO);
-
-                glBindVertexArray(lineVAO);
-                glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_ndc_pt.size(), &vec_line_ndc_pt.front(), GL_STATIC_DRAW);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineEBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_line_idx.size(), &vec_line_idx.front(), GL_STATIC_DRAW);
-
-                glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
-                glEnableVertexAttribArray(0);
-
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glBindVertexArray(0);
-            }
+            line_simple_shader.use();
+            line_simple_shader.setMat4("cam_proj", cam_proj);
+            line_simple_shader.setMat4("cam_view", cam_view);
+            glBindVertexArray(lineSimpleVAO);
+            glLineWidth(2.0f);
+            glDrawElements(GL_LINES, vec_line_idx.size(), GL_UNSIGNED_INT, 0);
         }
-
-        line_shader.use();
-        glBindVertexArray(lineVAO);
-        line_shader.setMat4("cam_proj", cam_proj);
-        line_shader.setMat4("cam_view", cam_view);
-        line_shader.setMat4("pjt_proj", pjt_proj);
-        line_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        line_shader.setMat4("hm", hm);
-        glLineWidth(2.0f);
-        glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteBuffers(1, &lineSimpleVAO);
+    glDeleteBuffers(1, &lineSimpleVBO);
+    glDeleteBuffers(1, &lineSimpleEBO);
+    
+    glDeleteBuffers(1, &lineVAO);
+    glDeleteBuffers(1, &lineVBO);
+    glDeleteBuffers(1, &lineEBO);
 
     glDeleteBuffers(1, &frustumVAO);
     glDeleteBuffers(1, &frustumVBO);
