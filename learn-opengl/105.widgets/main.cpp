@@ -581,12 +581,28 @@ int main()
     line_shader.setMat4("pjt_proj", pjt_proj);
 
     unsigned int lineSimpleVAO, lineSimpleVBO, lineSimpleEBO;
+    std::vector<glm::vec4> vec_line_simple_pt = {
+        {0.f, 0.f, 0.f, 0.f},
+        {0.f, 0.f, 0.f, 0.f}
+    };
+    std::vector<unsigned int> vec_line_simple_idx = {0, 1};
     {
         glGenVertexArrays(1, &lineSimpleVAO);
         glGenBuffers(1, &lineSimpleVBO);
-        glGenBuffers(1, &lineSimpleEBO);        
+        glGenBuffers(1, &lineSimpleEBO);
+
+        glBindVertexArray(lineSimpleVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, lineSimpleVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_simple_pt.size(), &vec_line_simple_pt.front(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineSimpleEBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_line_simple_idx.size(), &vec_line_simple_idx.front(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
     }
-    
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pjt_map1);
@@ -761,26 +777,12 @@ int main()
 
         // line draw function
         {
-            std::vector<glm::vec4> vec_line_simple_pt = {
-                {sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f},
-                { 2.f, sin(glfwGetTime()) * 2.f, 0.0f, 1.0f}
-                // {sin(glfwGetTime() / 2.f) * 1.f, 0.0f, 0.0f, 1.0f}
-                // {-2.f, 0.0f, 0.0f, 1.0f},
-                // { 2.f, 0.0f, 0.0f, 1.0f}
-            };
-
-            std::vector<unsigned int> vec_line_simple_idx = {0, 1};
+            vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
+            vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
 
             glBindVertexArray(lineSimpleVAO);
             glBindBuffer(GL_ARRAY_BUFFER, lineSimpleVBO);
             glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_simple_pt.size(), &vec_line_simple_pt.front(), GL_STATIC_DRAW);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lineSimpleEBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * vec_line_simple_idx.size(), &vec_line_simple_idx.front(), GL_STATIC_DRAW);
-
-            glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
-            glEnableVertexAttribArray(0);
-
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
 
             line_simple_shader.use();
