@@ -390,6 +390,11 @@ int main()
     //     pt[0] /= 2.;
     //     pt[1] /= 2.;
     // }
+    for(auto& pt : vec_frustum_ndc_pt)//for testing
+    {
+        pt[0] *= .96225;
+        pt[1] *= .96225;
+    }
     std::vector<unsigned int> vec_frustum_idx = {
         //near plane
         0, 1,
@@ -475,10 +480,15 @@ int main()
         #pragma omp parallel for
         for(int y = 0; y < tex1_rows; y++)
         {
+            continue;
             for(int x = 0; x < tex1_cols; x++)
             {
                 double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
                 double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
+                u*=2.;
+                v*=2.;
+                u*=.8;
+                v*=.8;
 
                 glm::vec4 ndc_npt = { u, v, -1., 1. };
                 glm::vec4 ndc_fpt = { u, v, 1., 1. };
@@ -798,8 +808,8 @@ int main()
             // vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
             // vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
 
-            vec_line_simple_pt[0] = proj_map[250][100];
-            vec_line_simple_pt[1] = proj_map[250][400];
+            vec_line_simple_pt[0] = proj_map[250][0];
+            vec_line_simple_pt[1] = proj_map[250][499];
 
             // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 0.);
             // vec_line_simple_pt[1] = glm::vec4(pjt2.Position, 0.);
