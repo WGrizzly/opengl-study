@@ -482,16 +482,39 @@ int main()
                 glm::vec4 ndc_npt = { u, v, 0., 1. };
                 glm::vec4 ndc_fpt = { u, v, 1., 1. };
 
-                glm::vec4 world_npt = ndc_npt * glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-                glm::vec4 world_fpt = ndc_fpt * glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+                glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+                glm::vec4 world_npt = ndc_npt * im;
+                glm::vec4 world_fpt = ndc_fpt * im;
 
-                double world_npt_dbl[3] = { world_npt[0], world_npt[1], world_npt[2] };
-                double world_fpt_dbl[3] = { world_fpt[0], world_fpt[1], world_fpt[2] };
+                double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
+                double world_fpt_dbl[3] = { world_fpt[0] / world_npt[3], world_fpt[1] / world_npt[3], world_fpt[2] / world_npt[3] };
+
+                if(false)
+                {
+                    for(int c = 0; c < 3; c++)
+                    {
+                        // world_npt_dbl[c] = pjt1.Position[c] + (pjt1.Right[c] * u + pjt1.Up[c] * v);
+                        // world_fpt_dbl[c] = pjt1.Position[c] + (pjt1.Right[c] * u + pjt1.Up[c] * v) + pjt1.Front[c] * 1000.;
+                        world_npt_dbl[c] = pjt1.Position[c];
+                        world_fpt_dbl[c] = pjt1.Position[c] + pjt1.Front[c] * 10000.;
+                    }
+                }
 
                 vtkNew<vtkPoints> inter_pts;
                 obb_tree->IntersectWithLine(world_npt_dbl, world_fpt_dbl, inter_pts, nullptr);
 
+                // if(y == half_rows && x == half_cols)
+                // {
+                //     std::cout << "before" << std::endl;
+                //     std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
+                //     std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
+                // }
                 if(0 >= inter_pts->GetNumberOfPoints() )    continue;
+                    // std::cout << "after" << std::endl;
+                // if(y == half_rows && x == half_cols)
+                // {
+                //     std::cout << "after" << std::endl;
+                // }
 
                 double inter_pt[3];
                 inter_pts->GetPoint(0, inter_pt);
@@ -720,7 +743,7 @@ int main()
             bowl_shader_.setVec3("pjtBlendPlane.norm", blend_plane.norm);
             bowl_shader_.setFloat("pjtBlendPlane.d", blend_plane.d);
         }
-        //model_obj.Draw(bowl_shader_);
+        model_obj.Draw(bowl_shader_);
 
         frustum_shader_.use();
         glBindVertexArray(frustumVAO);
@@ -728,7 +751,7 @@ int main()
         frustum_shader_.setMat4("cam_view", cam_view);
         frustum_shader_.setMat4("pjt_proj", pjt_proj);
         frustum_shader_.setMat4("pjt_view", pjt1.GetViewMatrix());
-        glLineWidth(2.0f);
+        glLineWidth(1.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
         GLenum glErr;
         int retCode = 0;
@@ -777,20 +800,41 @@ int main()
 
         // line draw function
         {
-            vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
-            vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
+            // vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
+            // vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
+
+            // vec_line_simple_pt[0] = proj_map[100][100];
+            // vec_line_simple_pt[1] = proj_map[200][200];
+
+            // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 0.);
+            // vec_line_simple_pt[1] = glm::vec4(pjt2.Position, 0.);
+
+            // vec_line_simple_pt[0] = vec_frustum_world_pt1[3];
+            // vec_line_simple_pt[1] = vec_frustum_world_pt1[4];
+
+            // vec_line_simple_pt[0] = vec_frustum_world_pt1[3];
+            // vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.);
+
+            vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 1.);
+            vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.) + glm::vec4(pjt1.Front* 100.f, 1.);
+            // cout << "[0]: " << vec_line_simple_pt[0][0] << ", " << vec_line_simple_pt[0][1] << vec_line_simple_pt[0][2] << vec_line_simple_pt[0][3] << std::endl;
+            // cout << "[1]: " << vec_line_simple_pt[1][0] << ", " << vec_line_simple_pt[1][1] << vec_line_simple_pt[1][2] << vec_line_simple_pt[1][3] << std::endl;
+
+
 
             glBindVertexArray(lineSimpleVAO);
             glBindBuffer(GL_ARRAY_BUFFER, lineSimpleVBO);
             glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * vec_line_simple_pt.size(), &vec_line_simple_pt.front(), GL_STATIC_DRAW);
-            glBindVertexArray(0);
+            // glBindVertexArray(0);
 
             line_simple_shader.use();
             line_simple_shader.setMat4("cam_proj", cam_proj);
             line_simple_shader.setMat4("cam_view", cam_view);
-            glBindVertexArray(lineSimpleVAO);
+            // glBindVertexArray(lineSimpleVAO);
             glLineWidth(3.0f);
             glDrawElements(GL_LINES, vec_line_idx.size(), GL_UNSIGNED_INT, 0);
+
+            glBindVertexArray(0);
         }
 
         glfwSwapBuffers(window);
