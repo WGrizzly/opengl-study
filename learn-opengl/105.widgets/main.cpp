@@ -472,6 +472,7 @@ int main()
 
         const int half_rows = tex1_rows / 2;
         const int half_cols = tex1_cols / 2;
+        #pragma omp parallel for
         for(int y = 0; y < tex1_rows; y++)
         {
             for(int x = 0; x < tex1_cols; x++)
@@ -479,53 +480,47 @@ int main()
                 double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
                 double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
 
-                glm::vec4 ndc_npt = { u, v, 0., 1. };
+                glm::vec4 ndc_npt = { u, v, -1., 1. };
                 glm::vec4 ndc_fpt = { u, v, 1., 1. };
 
                 glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-                glm::vec4 world_npt = ndc_npt * im;
-                glm::vec4 world_fpt = ndc_fpt * im;
+                glm::vec4 world_npt = im * ndc_npt;
+                glm::vec4 world_fpt = im * ndc_fpt;
 
+                // double world_npt_dbl[3] = { world_npt[0], world_npt[1], world_npt[2] };
+                // double world_fpt_dbl[3] = { world_fpt[0], world_fpt[1], world_fpt[2] };
                 double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
-                double world_fpt_dbl[3] = { world_fpt[0] / world_npt[3], world_fpt[1] / world_npt[3], world_fpt[2] / world_npt[3] };
-
-                if(false)
-                {
-                    for(int c = 0; c < 3; c++)
-                    {
-                        // world_npt_dbl[c] = pjt1.Position[c] + (pjt1.Right[c] * u + pjt1.Up[c] * v);
-                        // world_fpt_dbl[c] = pjt1.Position[c] + (pjt1.Right[c] * u + pjt1.Up[c] * v) + pjt1.Front[c] * 1000.;
-                        world_npt_dbl[c] = pjt1.Position[c];
-                        world_fpt_dbl[c] = pjt1.Position[c] + pjt1.Front[c] * 10000.;
-                    }
-                }
+                double world_fpt_dbl[3] = { world_fpt[0] / world_fpt[3], world_fpt[1] / world_fpt[3], world_fpt[2] / world_fpt[3] };
 
                 vtkNew<vtkPoints> inter_pts;
-                obb_tree->IntersectWithLine(world_npt_dbl, world_fpt_dbl, inter_pts, nullptr);
+                obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
 
-                // if(y == half_rows && x == half_cols)
-                // {
-                //     std::cout << "before" << std::endl;
-                //     std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
-                //     std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
-                // }
+                if(y == 100 && x == 100)
+                {
+                    std::cout << "[100, 100]" << std::endl;
+                    std::cout << u << ", " << v << std::endl;
+                    std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
+                    std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
+                }
                 if(0 >= inter_pts->GetNumberOfPoints() )    continue;
-                    // std::cout << "after" << std::endl;
-                // if(y == half_rows && x == half_cols)
-                // {
-                //     std::cout << "after" << std::endl;
-                // }
+                if(y == 100 && x == 100)
+                {
+                    std::cout << "[100, 100]" << std::endl;
+                    std::cout << u << ", " << v << std::endl;
+                    std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
+                    std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
+                }
 
                 double inter_pt[3];
                 inter_pts->GetPoint(0, inter_pt);
 
                 glm::vec3 glm_inter_pt = {  inter_pt[0], inter_pt[1], inter_pt[2]   };
-                proj_map[y].push_back(glm::vec4(
+                proj_map[y][x] = glm::vec4(
                     inter_pt[0],
                     inter_pt[1],
                     inter_pt[2],
-                    0.
-                ));
+                    1.
+                );
             }
         }
 
@@ -803,8 +798,8 @@ int main()
             // vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
             // vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
 
-            // vec_line_simple_pt[0] = proj_map[100][100];
-            // vec_line_simple_pt[1] = proj_map[200][200];
+            vec_line_simple_pt[0] = proj_map[250][100];
+            vec_line_simple_pt[1] = proj_map[250][400];
 
             // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 0.);
             // vec_line_simple_pt[1] = glm::vec4(pjt2.Position, 0.);
@@ -815,10 +810,59 @@ int main()
             // vec_line_simple_pt[0] = vec_frustum_world_pt1[3];
             // vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.);
 
-            vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 1.);
-            vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.) + glm::vec4(pjt1.Front* 100.f, 1.);
+            // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 1.);
+            // vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.) + glm::vec4(pjt1.Front* 100.f, 1.);
             // cout << "[0]: " << vec_line_simple_pt[0][0] << ", " << vec_line_simple_pt[0][1] << vec_line_simple_pt[0][2] << vec_line_simple_pt[0][3] << std::endl;
             // cout << "[1]: " << vec_line_simple_pt[1][0] << ", " << vec_line_simple_pt[1][1] << vec_line_simple_pt[1][2] << vec_line_simple_pt[1][3] << std::endl;
+
+            if(false)
+            {
+                double ray_start[3] = {
+                    pjt1.Position[0],
+                    pjt1.Position[1],
+                    pjt1.Position[2]
+                };
+                double ray_end[3] = {
+                    pjt1.Position[0] + pjt1.Front[0] * 100.,
+                    pjt1.Position[1] + pjt1.Front[1] * 100.,
+                    pjt1.Position[2] + pjt1.Front[2] * 100.
+                };
+
+                vtkNew<vtkPoints> inter_pts;
+                if(obb_tree->IntersectWithLine(ray_start, ray_end, inter_pts, nullptr))
+                {
+                    double p[3];
+                    inter_pts->GetPoint(0, p);
+                    vec_line_simple_pt[0][0] = p[0];
+                    vec_line_simple_pt[0][1] = p[1];
+                    vec_line_simple_pt[0][2] = p[2];
+                    vec_line_simple_pt[0][3] = 1.;
+                }
+            }
+            if(false)
+            {
+                double ray_start[3] = {
+                    pjt2.Position[0],
+                    pjt2.Position[1],
+                    pjt2.Position[2]
+                };
+                double ray_end[3] = {
+                    pjt2.Position[0] + pjt2.Front[0] * 100.,
+                    pjt2.Position[1] + pjt2.Front[1] * 100.,
+                    pjt2.Position[2] + pjt2.Front[2] * 100.
+                };
+
+                vtkNew<vtkPoints> inter_pts;
+                if(obb_tree->IntersectWithLine(ray_start, ray_end, inter_pts, nullptr))
+                {
+                    double p[3];
+                    inter_pts->GetPoint(0, p);
+                    vec_line_simple_pt[1][0] = p[0];
+                    vec_line_simple_pt[1][1] = p[1];
+                    vec_line_simple_pt[1][2] = p[2];
+                    vec_line_simple_pt[1][3] = 1.;
+                }
+            }
 
 
 
