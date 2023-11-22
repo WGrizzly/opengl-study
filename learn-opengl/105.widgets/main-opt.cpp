@@ -22,8 +22,13 @@
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkSTLReader.h>
+#include <vtkCell.h>
 #include <vtkCellArray.h>
 #include <vtkIdList.h>
+#include <vtkPlane.h>
+#include <vtkCamera.h>
+#include <vtkClipPolyData.h>
+#include <vtkImplicitBoolean.h>
 #include <vtkAutoInit.h>
 #include <vtkNew.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2)
@@ -107,6 +112,23 @@ struct Plane
         d = -glm::dot(norm, a);
     }
 };
+
+vtkSmartPointer<vtkPlane> ConvertToVtkPlane(const Plane& plane)
+{
+    vtkSmartPointer<vtkPlane> vtkPlaneObj = vtkSmartPointer<vtkPlane>::New();
+
+    // Set the normal
+    vtkPlaneObj->SetNormal(plane.norm.x, plane.norm.y, plane.norm.z);
+
+    // Calculate a point on the plane
+    glm::vec3 pointOnPlane = -plane.d * plane.norm;
+
+    // Set the origin
+    vtkPlaneObj->SetOrigin(pointOnPlane.x, pointOnPlane.y, pointOnPlane.z);
+
+    return vtkPlaneObj;
+}
+
 
 struct Line
 {
@@ -454,12 +476,44 @@ int main()
     //           << bias_mat[0][2] << ", " << bias_mat[1][2] << ", " << bias_mat[2][2] << ", " << bias_mat[3][2] << std::endl
     //           << bias_mat[0][3] << ", " << bias_mat[1][3] << ", " << bias_mat[2][3] << ", " << bias_mat[3][3] << std::endl; 
 
-
     // projector setting for test
     {
         pjt1.ProcessMouseMovement(0, 150);
         pjt2.ProcessMouseMovement(0, 150);
         pjt2.rotateYaw(-60.f);
+    }
+
+    vtkNew<vtkOBBTree> cliped_obb_tree;
+    {
+        std::vector<glm::vec4> vec_frustum_world_pt1;
+        glm::mat4 im1 = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+        for (size_t c = 0; c < vec_frustum_ndc_pt.size(); c++)
+        {
+            glm::vec4 ndc_pt = vec_frustum_ndc_pt[c];
+            glm::vec4 world_pt = im1 * ndc_pt;
+            vec_frustum_world_pt1.push_back(world_pt);
+        }
+
+        std::vector<Plane> vec_side_planes_1 = calc_side_planes(vec_frustum_world_pt1);
+        vtkNew<vtkImplicitBoolean> combined_planes;
+        combined_planes->SetOperationTypeToIntersection();
+
+        for(const auto& plane : vec_side_planes_1)
+        {
+            vtkSmartPointer<vtkPlane> vtk_plane = vtkSmartPointer<vtkPlane>::New();
+            vtk_plane = ConvertToVtkPlane(plane);
+            combined_planes->AddFunction(vtk_plane);
+        }
+
+        vtkSmartPointer<vtkClipPolyData> clipper = vtkSmartPointer<vtkClipPolyData>::New();
+        clipper->SetInputData(poly);
+        clipper->SetClipFunction(combined_planes);
+        clipper->Update();
+
+        cliped_obb_tree->SetDataSet(clipper->GetOutput());
+        cliped_obb_tree->BuildLocator();
+        cliped_obb_tree->Update();
+
     }
 
     // 프로젝터가 움직이지 않는다고 가정했을때만 사용
@@ -477,63 +531,56 @@ int main()
             proj_map.push_back(vec_list);
         }
 
-        const int half_rows = tex1_rows / 2;
-        const int half_cols = tex1_cols / 2;
-        #pragma omp parallel for
-        for(int y = 0; y < tex1_rows; y++)
-        {
-            for(int x = 0; x < tex1_cols; x++)
-            {
-                double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
-                double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
-                u*=2.;
-                v*=2.;
-                u*=FIT_SCALE;
-                v*=FIT_SCALE;
-
-                glm::vec4 ndc_npt = { u, v, -1., 1. };
-                glm::vec4 ndc_fpt = { u, v, 1., 1. };
-
-                glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-                glm::vec4 world_npt = im * ndc_npt;
-                glm::vec4 world_fpt = im * ndc_fpt;
-
-                // double world_npt_dbl[3] = { world_npt[0], world_npt[1], world_npt[2] };
-                // double world_fpt_dbl[3] = { world_fpt[0], world_fpt[1], world_fpt[2] };
-                double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
-                double world_fpt_dbl[3] = { world_fpt[0] / world_fpt[3], world_fpt[1] / world_fpt[3], world_fpt[2] / world_fpt[3] };
-
-                vtkNew<vtkPoints> inter_pts;
-                obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
-
-                // if(y == 100 && x == 100)
-                // {
-                //     std::cout << "[100, 100]" << std::endl;
-                //     std::cout << u << ", " << v << std::endl;
-                //     std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
-                //     std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
-                // }
-                if(0 >= inter_pts->GetNumberOfPoints() )    continue;
-                // if(y == 100 && x == 100)
-                // {
-                //     std::cout << "[100, 100]" << std::endl;
-                //     std::cout << u << ", " << v << std::endl;
-                //     std::cout << "near: " << world_npt_dbl[0] << ", "<< world_npt_dbl[1] << ", "<< world_npt_dbl[2] << ", "<< world_npt_dbl[3] << std::endl;
-                //     std::cout << "far: " << world_fpt_dbl[0] << ", "<< world_fpt_dbl[1] << ", "<< world_fpt_dbl[2] << ", "<< world_fpt_dbl[3] << std::endl;
-                // }
-
-                double inter_pt[3];
-                inter_pts->GetPoint(0, inter_pt);
-
-                glm::vec3 glm_inter_pt = {  inter_pt[0], inter_pt[1], inter_pt[2]   };
-                proj_map[y][x] = glm::vec4(
-                    inter_pt[0],
-                    inter_pt[1],
-                    inter_pt[2],
-                    1.
-                );
-            }
-        }
+        // const int half_rows = tex1_rows / 2;
+        // const int half_cols = tex1_cols / 2;
+        // #pragma omp parallel for
+        // for(int y = 0; y < tex1_rows; y++)
+        // {
+        //     for(int x = 0; x < tex1_cols; x++)
+        //     {
+        //         double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
+        //         double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
+        //         u*=2.;
+        //         v*=2.;
+        //         u*=FIT_SCALE;
+        //         v*=FIT_SCALE;
+        
+        //         glm::vec4 ndc_npt = { u, v, -1., 1. };
+        //         glm::vec4 ndc_fpt = { u, v, 1., 1. };
+        
+        //         glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+        //         glm::vec4 world_npt = im * ndc_npt;
+        //         glm::vec4 world_fpt = im * ndc_fpt;
+        
+        //         double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
+        //         double world_fpt_dbl[3] = { world_fpt[0] / world_fpt[3], world_fpt[1] / world_fpt[3], world_fpt[2] / world_fpt[3] };
+        
+        //         if (true)
+        //         {
+        //             vtkNew<vtkPoints> inter_pts;
+        //             cliped_obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
+        
+        //             if (0 >= inter_pts->GetNumberOfPoints())
+        //                 continue;
+        
+        //             double inter_pt[3];
+        //             inter_pts->GetPoint(0, inter_pt);
+        
+        //             proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
+        //         }
+        //         else
+        //         {
+        //             double dist = 0.;
+        //             double inter_pt[3] = {0.,};
+        //             double pcrds[3] = {0.,};
+        //             int sub_id = 0;
+        //             vtkIdType cell_id;
+        //             vtkNew<vtkGenericCell> gcell;
+        //             if(obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, 0.1, dist, inter_pt, pcrds, sub_id, cell_id, gcell))
+        //                 proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
+        //         }
+        //     }
+        // }
 
     }
 
@@ -633,6 +680,174 @@ int main()
         glBindVertexArray(0);
     }
 
+    
+
+    // std::vector<std::vector<>>
+    std::vector<std::vector<std::vector<vtkIdType>>> cell_map1, cell_map2;
+    for(int y = 0; y < tex1_rows; y++)
+    {
+        std::vector<std::vector<vtkIdType>> v;
+        for(int x = 0; x < tex1_cols; x++)
+            v.push_back(std::vector<vtkIdType>());
+
+        cell_map1.push_back(v);
+        cell_map2.push_back(v);
+    }
+
+    int cnt = 0;
+    int max_x = 0, max_y = 0;
+    for(vtkIdType pt_id = 0; pt_id < poly->GetNumberOfPoints(); pt_id++)
+    {
+        double* pt = poly->GetPoint(pt_id);
+        glm::vec4 uv1 = pjt_proj * pjt1.GetViewMatrix() * glm::vec4(pt[0], pt[1], pt[2], 1.);
+        uv1 /= uv1[2];
+        if (uv1[0] > 1. || -1. > uv1[0])            continue;
+        if (uv1[1] > 1. || -1. > uv1[1])            continue;
+        uv1 += 1.;
+        uv1 /= 2.;
+        // cnt++;
+
+        double down_x = (uv1[0] * tex1_cols);
+        double down_y = (uv1[1] * tex1_rows);
+        if(down_x > max_x) max_x = down_x;
+        if(down_y > max_y) max_y = down_y;
+        if((int)down_y == 250)
+        {
+            std::cout << down_x << ", " << down_y << " : " << uv1[0] << ", " << uv1[1] << std::endl;
+            cnt++;
+        }
+        cell_map1[down_y][down_x].push_back(1);
+
+        int up_x = std::ceil(uv1[0] * tex1_cols);
+        int up_y = std::ceil(uv1[1] * tex1_rows);
+        // if (tex1_cols > up_x && tex1_rows > up_y)
+        //     cell_map1[up_y][up_x].push_back(cell_id);
+
+        vtkNew<vtkIdList> cell_ids;
+        poly->GetPointCells(pt_id, cell_ids);
+
+        for(vtkIdType list_id = 0; list_id < cell_ids->GetNumberOfIds(); list_id++)
+        {
+            vtkIdType cell_id = cell_ids->GetId(list_id);
+        }
+    }
+    std::cout << "cnt is " << cnt << " : " << max_x << ", " << max_y << std::endl;
+
+    // for(vtkIdType cell_id = 0; cell_id < poly->GetNumberOfCells(); cell_id++)
+    // {
+    //     vtkCell* cell =  poly->GetCell(cell_id);
+    //     vtkIdList* pt_id_list = cell->GetPointIds();
+    //     for(vtkIdType list_idx = 0; list_idx < pt_id_list->GetNumberOfIds(); list_idx++)
+    //     {
+    //         vtkIdType pt_id = pt_id_list->GetId(list_idx);
+    //         double* pt = poly->GetPoint(pt_id);
+
+    //         glm::vec4 uv1 = pjt_proj * pjt1.GetViewMatrix() * glm::vec4(pt[0], pt[1], pt[2], 1.);
+    //         uv1 /= uv1[2];
+    //         if(uv1[0] > 1. || 0. > uv1[0]) continue;
+    //         if(uv1[1] > 1. || 0. > uv1[1]) continue;
+
+    //         int down_x = std::floor(uv1[0] * tex1_cols);
+    //         int down_y = std::floor(uv1[1] * tex1_rows);
+    //         if(down_x == 250)
+    //             std::cout << down_x << ", " << down_y << " : " << uv1[0] << ", " << uv1[1] << std::endl;
+    //         cell_map1[down_y][down_x].push_back(cell_id);
+
+    //         int up_x = std::ceil(uv1[0] * tex1_cols);
+    //         int up_y = std::ceil(uv1[1] * tex1_rows);
+    //         if( tex1_cols > up_x && tex1_rows > up_y)
+    //             cell_map1[up_y][up_x].push_back(cell_id);
+
+
+    //         // glm::vec4 uv2 = pjt_proj * pjt2.GetViewMatrix() * glm::vec4(pt[0], pt[1], pt[2], 1.);
+    //         // uv2 /= uv2[3];
+    //         //
+    //         // down_x = std::floor(uv2[0] * tex1_cols);    up_x = std::ceil(uv2[0] * tex1_cols);
+    //         // down_y = std::floor(uv2[1] * tex1_rows);    up_y = std::ceil(uv2[1] * tex1_rows);
+    //         // if (tex1_cols > down_x && down_x >= 0 &&
+    //         //     tex1_rows > down_y && down_y >= 0)
+    //         //     cell_map2[down_y][down_x].push_back(cell_id);
+    //         //
+    //         // if (tex1_cols >= up_x && up_x >= 0 &&
+    //         //     tex1_rows >= up_y && up_y >= 0)
+    //         //     cell_map2[up_y][up_x].push_back(cell_id);
+    //     }
+
+    //     // vtkPoints* pts = poly->GetCell(id)->GetPoints();
+    //     // for(vtkIdType c = 0; c < pts->GetNumberOfPoints(); c++)
+    //     // {
+    //     //     double* pt = pts->GetPoint(c);
+    //     //     glm::vec4 gl_pt(pt[0], pt[1], pt[2], 1.);
+
+    //     //     glm::vec4 uv1 = pjt_proj * pjt1.GetViewMatrix() * glm::vec4(pt[0], pt[1], pt[2], 1.);
+    //     //     uv1 /= uv1[3];
+    //     //     int down_x = std::floor(uv1[0]);
+    //     //     int down_y = std::floor(uv1[1]);
+    //     //     int up_x = std::ceil(uv1[0]);
+    //     //     int up_y = std::ceil(uv1[1]);
+    //     //     if (tex1_cols >= down_x && down_x >= 0 &&
+    //     //         tex1_rows >= down_y && down_y >= 0)
+    //     //         cell_map1[down_y][down_x].push_back(cell_list->GetId(i));
+
+    //     //     if (tex1_cols >= up_x && up_x >= 0 &&
+    //     //         tex1_rows >= up_y && up_y >= 0)
+    //     //         cell_map1[up_y][up_x].push_back(cell_list->GetId(i));
+    //     // }
+    // }
+
+    if(false){
+    for(const auto& mesh : model_obj.meshes)
+    {
+        for(const auto& pt : mesh.vertices)
+        {
+            double dbl_pt[3] = {    pt.Position[0], pt.Position[1], pt.Position[2] };
+            int sub_id;
+            double pcoords[3], weights[8];
+            vtkCell* cell = poly->FindAndGetCell(dbl_pt, NULL, -1, 0.1, sub_id, pcoords, weights);
+            if(!cell)   continue;
+
+            vtkIdList* cell_list = cell->GetPointIds();
+            if(cell_list->GetNumberOfIds()>3)
+                std::cout << "here!" << std::endl;
+            
+
+            glm::vec4 uv1 = pjt_proj * pjt1.GetViewMatrix() * glm::vec4(pt.Position, 1.);
+            uv1 /= uv1[3];
+            int down_x = std::floor(uv1[0]);
+            int down_y = std::floor(uv1[1]);
+            int up_x = std::ceil(uv1[0]);
+            int up_y = std::ceil(uv1[1]);
+            for(vtkIdType i = 0; i < cell_list->GetNumberOfIds(); i++)
+            {
+                if( tex1_cols >= down_x && down_x >= 0 &&
+                    tex1_rows >= down_y && down_y >= 0)
+                    cell_map1[down_y][down_x].push_back(cell_list->GetId(i));
+
+                if( tex1_cols >= up_x && up_x >= 0 &&
+                    tex1_rows >= up_y && up_y >= 0)
+                    cell_map1[up_y][up_x].push_back(cell_list->GetId(i));
+            }
+
+            glm::vec4 uv2 = pjt_proj * pjt2.GetViewMatrix() * glm::vec4(pt.Position, 1.);
+            uv2 /= uv2[3];
+            down_x = std::floor(uv2[0]);
+            down_y = std::floor(uv2[1]);
+            up_x = std::ceil(uv2[0]);
+            up_y = std::ceil(uv2[1]);
+            for(vtkIdType i = 0; i < cell_list->GetNumberOfIds(); i++)
+            {
+                if( tex1_cols >= down_x && down_x >= 0 &&
+                    tex1_rows >= down_y && down_y >= 0)
+                    cell_map2[down_y][down_x].push_back(cell_list->GetId(i));
+
+                if( tex1_cols >= up_x && up_x >= 0 &&
+                    tex1_rows >= up_y && up_y >= 0)
+                    cell_map2[up_y][up_x].push_back(cell_list->GetId(i));
+            }
+        }
+    }
+    }
+    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pjt_map1);
     glActiveTexture(GL_TEXTURE1);
@@ -651,6 +866,8 @@ int main()
             std::cout << "fps: " << frame_cnt << std::endl;
             delta_sum = 0.f;
             frame_cnt = 0;
+
+            std::cout << cell_map1[250][0].size() << std::endl;
         }
         else
         {
@@ -759,123 +976,22 @@ int main()
         frustum_shader_.setMat4("pjt_view", pjt1.GetViewMatrix());
         glLineWidth(1.0f);
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-        GLenum glErr;
-        int retCode = 0;
-
-        glErr = glGetError();
-        while (glErr != GL_NO_ERROR)
-        {
-            const char *message = "";
-            switch (glErr)
-            {
-            case GL_INVALID_ENUM:
-                message = "Invalid enum";
-                break;
-            case GL_INVALID_VALUE:
-                message = "Invalid value";
-                break;
-            case GL_INVALID_OPERATION:
-                message = "Invalid operation";
-                break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION:
-                message = "Invalid framebuffer operation";
-                break;
-            case GL_OUT_OF_MEMORY:
-                message = "Out of memory";
-                break;
-            default:
-                message = "Unknown error";
-            }
-
-            printf("glError in file %s @ line %d: %s\n", "main", 0, message);
-            retCode = 1;
-            glErr = glGetError();
-        }
-
         frustum_shader_.setMat4("pjt_view", pjt2.GetViewMatrix());
         glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
 
-        // line_shader.use();
-        // glBindVertexArray(lineVAO);
-        // line_shader.setMat4("cam_proj", cam_proj);
-        // line_shader.setMat4("cam_view", cam_view);
-        // line_shader.setMat4("pjt_proj", pjt_proj);
-        // line_shader.setMat4("pjt_view", pjt2.GetViewMatrix());
-        // glLineWidth(2.0f);
-        // glDrawElements(GL_LINES, vec_frustum_idx.size(), GL_UNSIGNED_INT, 0);
-
         // line draw function
         {
-            // vec_line_simple_pt[0] = glm::vec4(sin(glfwGetTime()) - 1.f, 0.0f, 0.0f, 1.0f);
-            // vec_line_simple_pt[1] = glm::vec4(2.f, sin(glfwGetTime()), 0.0f, 1.0f);
-
             vec_line_simple_pt[0] = proj_map[250][0];
             vec_line_simple_pt[1] = proj_map[250][499];
 
-            // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 0.);
-            // vec_line_simple_pt[1] = glm::vec4(pjt2.Position, 0.);
-
-            // vec_line_simple_pt[0] = vec_frustum_world_pt1[3];
-            // vec_line_simple_pt[1] = vec_frustum_world_pt1[4];
-
-            // vec_line_simple_pt[0] = vec_frustum_world_pt1[3];
-            // vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.);
-
-            // vec_line_simple_pt[0] = glm::vec4(pjt1.Position, 1.);
-            // vec_line_simple_pt[1] = glm::vec4(pjt1.Position, 1.) + glm::vec4(pjt1.Front* 100.f, 1.);
-            // cout << "[0]: " << vec_line_simple_pt[0][0] << ", " << vec_line_simple_pt[0][1] << vec_line_simple_pt[0][2] << vec_line_simple_pt[0][3] << std::endl;
-            // cout << "[1]: " << vec_line_simple_pt[1][0] << ", " << vec_line_simple_pt[1][1] << vec_line_simple_pt[1][2] << vec_line_simple_pt[1][3] << std::endl;
-
-            if(false)
+            //point 1 calc
             {
-                double ray_start[3] = {
-                    pjt1.Position[0],
-                    pjt1.Position[1],
-                    pjt1.Position[2]
-                };
-                double ray_end[3] = {
-                    pjt1.Position[0] + pjt1.Front[0] * 100.,
-                    pjt1.Position[1] + pjt1.Front[1] * 100.,
-                    pjt1.Position[2] + pjt1.Front[2] * 100.
-                };
 
-                vtkNew<vtkPoints> inter_pts;
-                if(obb_tree->IntersectWithLine(ray_start, ray_end, inter_pts, nullptr))
-                {
-                    double p[3];
-                    inter_pts->GetPoint(0, p);
-                    vec_line_simple_pt[0][0] = p[0];
-                    vec_line_simple_pt[0][1] = p[1];
-                    vec_line_simple_pt[0][2] = p[2];
-                    vec_line_simple_pt[0][3] = 1.;
-                }
             }
-            if(false)
+            //point 2 calc
             {
-                double ray_start[3] = {
-                    pjt2.Position[0],
-                    pjt2.Position[1],
-                    pjt2.Position[2]
-                };
-                double ray_end[3] = {
-                    pjt2.Position[0] + pjt2.Front[0] * 100.,
-                    pjt2.Position[1] + pjt2.Front[1] * 100.,
-                    pjt2.Position[2] + pjt2.Front[2] * 100.
-                };
-
-                vtkNew<vtkPoints> inter_pts;
-                if(obb_tree->IntersectWithLine(ray_start, ray_end, inter_pts, nullptr))
-                {
-                    double p[3];
-                    inter_pts->GetPoint(0, p);
-                    vec_line_simple_pt[1][0] = p[0];
-                    vec_line_simple_pt[1][1] = p[1];
-                    vec_line_simple_pt[1][2] = p[2];
-                    vec_line_simple_pt[1][3] = 1.;
-                }
+                
             }
-
-
 
             glBindVertexArray(lineSimpleVAO);
             glBindBuffer(GL_ARRAY_BUFFER, lineSimpleVBO);

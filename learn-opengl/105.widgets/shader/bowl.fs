@@ -73,7 +73,9 @@ void main()
     //         result = vec4(0.6);
     // }
 
-    vec2 uv1 = pjtTexCoord1.xy / pjtTexCoord1.z;
+    // vec2 uv1 = pjtTexCoord1.xy / pjtTexCoord1.z;
+    vec3 txyz = pjtTexCoord1.xyz / pjtTexCoord1.w;
+    vec2 uv1 = txyz.xy / txyz.z;
     if( 1.0 >= uv1.x && uv1.x >= 0. &&
         1.0 >= uv1.y && uv1.y >= 0.)
     {
