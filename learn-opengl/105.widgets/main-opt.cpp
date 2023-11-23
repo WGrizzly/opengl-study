@@ -683,6 +683,7 @@ int main()
 
     float delta_sum = 0.f;
     int frame_cnt = 0;
+    glm::vec4 screen_pos;
     while (!glfwWindowShouldClose(window))
     {
         float current_frame = static_cast<float>(glfwGetTime());
@@ -694,6 +695,11 @@ int main()
             std::cout << "fps: " << frame_cnt << std::endl;
             delta_sum = 0.f;
             frame_cnt = 0;
+            glm::vec2 xy(screen_pos[0], screen_pos[1]);
+            xy += 1.;
+            xy /= 2.;
+            // std::cout << "screen_pos: " << screen_pos[0] * SCR_WIDTH << ", " << screen_pos[1] * SCR_HEIGHT << ", " << screen_pos[2] << ", " << screen_pos[3] << std::endl;
+            std::cout << "screen_pos: " << xy[0] * SCR_WIDTH << ", " << xy[1] * SCR_HEIGHT << std::endl;
         }
         else
         {
@@ -872,6 +878,9 @@ int main()
                     continue;
                 
                 vec_line_simple_pt[1] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
+
+                screen_pos = cam_proj * cam_view * vec_line_simple_pt[1];
+                screen_pos /= screen_pos[3];
             }
 
             glBindVertexArray(lineSimpleVAO);
