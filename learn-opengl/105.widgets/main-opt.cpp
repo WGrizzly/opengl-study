@@ -19,6 +19,7 @@
 #include <chrono>
 #include <vtkKdTree.h>
 #include <vtkOBBTree.h>
+#include <vtkModifiedBSPTree.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkSTLReader.h>
@@ -342,19 +343,25 @@ int main()
     glEnable(GL_MULTISAMPLE);
     glfwSwapInterval(1);
 
-    Model model_obj("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+    std::string model_path = "/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl";
+    Model model_obj(model_path);
 
     vtkNew<vtkOBBTree> obb_tree;
     vtkNew<vtkKdTree> kd_tree;
+    vtkNew<vtkModifiedBSPTree> bsp_tree;
     vtkNew<vtkCellArray> cell_list;
     vtkNew<vtkPolyData> poly;
     {
         vtkNew<vtkSTLReader> reader;
-        reader->SetFileName("/media/dyjeon/db61bdae-f47f-444e-b54e-9628cbdf4ae8/sx-resources/model-3d/bowl-model-1.stl");
+        reader->SetFileName(model_path.c_str());
         reader->Update();
 
         poly->DeepCopy(reader->GetOutput());
         std::cout << "# of pts: " << poly->GetNumberOfPoints() << std::endl;
+
+        bsp_tree->SetDataSet(reader->GetOutput());
+        bsp_tree->BuildLocator();
+        bsp_tree->Update();
 
         obb_tree->SetDataSet(poly);
         obb_tree->BuildLocator();
@@ -531,56 +538,65 @@ int main()
             proj_map.push_back(vec_list);
         }
 
-        // const int half_rows = tex1_rows / 2;
-        // const int half_cols = tex1_cols / 2;
+        const int half_rows = tex1_rows / 2;
+        const int half_cols = tex1_cols / 2;
         // #pragma omp parallel for
-        // for(int y = 0; y < tex1_rows; y++)
-        // {
-        //     for(int x = 0; x < tex1_cols; x++)
-        //     {
-        //         double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
-        //         double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
-        //         u*=2.;
-        //         v*=2.;
-        //         u*=FIT_SCALE;
-        //         v*=FIT_SCALE;
+        for(int y = 0; y < tex1_rows; y++)
+        {
+            for(int x = 0; x < tex1_cols; x++)
+            {
+                double u = static_cast<double>(x - half_cols) / static_cast<double>(tex1_cols);
+                double v = static_cast<double>(y - half_rows) / static_cast<double>(tex1_rows);
+                u*=2.;
+                v*=2.;
+                u*=FIT_SCALE;
+                v*=FIT_SCALE;
         
-        //         glm::vec4 ndc_npt = { u, v, -1., 1. };
-        //         glm::vec4 ndc_fpt = { u, v, 1., 1. };
+                glm::vec4 ndc_npt = { u, v, -1., 1. };
+                glm::vec4 ndc_fpt = { u, v, 1., 1. };
         
-        //         glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
-        //         glm::vec4 world_npt = im * ndc_npt;
-        //         glm::vec4 world_fpt = im * ndc_fpt;
+                glm::mat4 im = glm::inverse(pjt_proj * pjt1.GetViewMatrix());
+                glm::vec4 world_npt = im * ndc_npt;
+                glm::vec4 world_fpt = im * ndc_fpt;
         
-        //         double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
-        //         double world_fpt_dbl[3] = { world_fpt[0] / world_fpt[3], world_fpt[1] / world_fpt[3], world_fpt[2] / world_fpt[3] };
+                double world_npt_dbl[3] = { world_npt[0] / world_npt[3], world_npt[1] / world_npt[3], world_npt[2] / world_npt[3] };
+                double world_fpt_dbl[3] = { world_fpt[0] / world_fpt[3], world_fpt[1] / world_fpt[3], world_fpt[2] / world_fpt[3] };
         
-        //         if (true)
-        //         {
-        //             vtkNew<vtkPoints> inter_pts;
-        //             cliped_obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
-        
-        //             if (0 >= inter_pts->GetNumberOfPoints())
-        //                 continue;
-        
-        //             double inter_pt[3];
-        //             inter_pts->GetPoint(0, inter_pt);
-        
-        //             proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
-        //         }
-        //         else
-        //         {
-        //             double dist = 0.;
-        //             double inter_pt[3] = {0.,};
-        //             double pcrds[3] = {0.,};
-        //             int sub_id = 0;
-        //             vtkIdType cell_id;
-        //             vtkNew<vtkGenericCell> gcell;
-        //             if(obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, 0.1, dist, inter_pt, pcrds, sub_id, cell_id, gcell))
-        //                 proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
-        //         }
-        //     }
-        // }
+                if (true)
+                {
+                    // vtkNew<vtkPoints> inter_pts;
+                    // cliped_obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
+                    // obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, inter_pts, nullptr);
+                    // if (0 >= inter_pts->GetNumberOfPoints())
+                    //     continue;
+                    //
+                    // double inter_pt[3];
+                    // inter_pts->GetPoint(0, inter_pt);
+
+                    // Outputs
+                    double t;    // Parametric coordinate of intersection (0 (corresponding to p1) to
+                                 // 1 (corresponding to p2)).
+                    double inter_pt[3]; // The coordinate of the intersection.
+                    double pcoords[3];
+                    int subId;
+                    if(!bsp_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, .01, t, inter_pt, pcoords, subId))
+                        continue;
+
+                    proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
+                }
+                else
+                {
+                    double dist = 0.;
+                    double inter_pt[3] = {0.,};
+                    double pcrds[3] = {0.,};
+                    int sub_id = 0;
+                    vtkIdType cell_id;
+                    vtkNew<vtkGenericCell> gcell;
+                    if(obb_tree->IntersectWithLine(world_fpt_dbl, world_npt_dbl, 0.1, dist, inter_pt, pcrds, sub_id, cell_id, gcell))
+                        proj_map[y][x] = glm::vec4(inter_pt[0], inter_pt[1], inter_pt[2], 1.);
+                }
+            }
+        }
 
     }
 
